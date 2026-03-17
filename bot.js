@@ -8,11 +8,11 @@ const PORT = process.env.PORT || 3000;
 app.get("/", (req, res) => res.send("✅ Bot Running"));
 app.listen(PORT, () => console.log("Server running"));
 
-const token = "PUT_NEW_TOKEN_HERE";
+const token = "8605121015:AAFz-OwQB540Lzs7ak8zxSGS_dopDApoetU";
 const bot = new TelegramBot(token, { polling: true });
 
 const ADMIN_IDS = [8521844327,8809115899];
-const channels = ["@earnwithmark41","@Marks_community"];
+const channels = ["@earnwithmark41"];
 
 let stock = { Hotya: "available", GOSH: "available" };
 
