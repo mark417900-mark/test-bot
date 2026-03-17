@@ -81,7 +81,6 @@ reply_markup:{
 inline_keyboard:[
 [
 {text:"Channel",url:`https://t.me/${channels[0].replace("@","")}`},
-{text:"Community",url:`https://t.me/${channels[1].replace("@","")}`}
 ],
 [{text:"Joined ✅",callback_data:"check_join"}]
 ]
