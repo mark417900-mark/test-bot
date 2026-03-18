@@ -492,49 +492,42 @@ if(data.startsWith("buyapprove_") || data.startsWith("buyreject_")){
     const userId = data.split("_")[1];
     if(!ADMIN_IDS.includes(adminId)) return;
 
-    if(data.startsWith("buyapprove_")){
-        users[userId].buyRequest = false;
-        users[userId].waitingAdminMsg = true;
-        users[userId].adminTarget = userId;
+  if(data.startsWith("buyapprove_")){
+    users[userId].buyRequest = false;
+    users[userId].waitingAdminMsg = true;
+    users[userId].adminTarget = userId;
 
-        /* SUCCESSFUL TRANSACTION */
-        users[userId].transactionCount += 1;
+    users[userId].transactionCount += 1;
+    users[userId].redeemLimit += 1;
 
-        /* INCREASE REDEEM LIMIT */
-        users[userId].redeemLimit += 1;
+    let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
+    if(eligibleBonus > users[userId].bonusUnlocked){
+        let newBonus = eligibleBonus - users[userId].bonusUnlocked;
+        users[userId].refProgress += (newBonus * 4);
+        users[userId].bonusUnlocked = eligibleBonus;
 
-        /* BONUS SYSTEM (EVERY 5 TRANSACTIONS) */
-        let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
-
-        if(eligibleBonus > users[userId].bonusUnlocked){
-            let newBonus = eligibleBonus - users[userId].bonusUnlocked;
-            users[userId].refProgress += (newBonus * 4); // +4 redeem code bonus
-            users[userId].bonusUnlocked = eligibleBonus;
-        }
-        bot.sendMessage(userId,`✅ Payment Verified!
+        bot.sendMessage(userId,
+                        `✅ Payment Verified!
 Your purchase has been approved.🥳
-
-Admin will send your code soon..🎁`);
-              
-            bot.sendMessage(userId,
+Admin will send your code soon..🎁`
+        );
+    }
+    bot.sendMessage(userId,
 `🎁 BONUS UNLOCKED!
-
 🔥 You completed ${users[userId].transactionCount} transactions!
-
 🎉 You received +${newBonus * 4} referral progress
+🚀 You can now redeem reward!`
+    );
 
-🚀 You can now redeem reward!`);
-        
+    saveUsers();
 
-        saveUsers();
-
-        const u = users[userId];
-        bot.sendMessage(adminId,
-`📦 <b>Delivering Order</b>
-🆔 <b>User ID:</b> <code>${userId}</code>
+    const u = users[userId];
+    bot.sendMessage(adminId,
+`📦 <b>Order Delevering to</b> ID:<code>${userId}</code>
 📦 <b>Code Type:</b> ${u.buyType}
 🔢 <b>Quantity:</b> ${u.buyQty}`,
-        { parse_mode:"HTML" });
+    { parse_mode: "HTML" });
+}
     } else {
         users[userId].buyRequest = false;
         saveUsers();
