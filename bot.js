@@ -23,7 +23,7 @@ const botUsername = "MARKS_ZONEBot";
 const ADMIN_IDS = [8521844327,8809115899];
 
 /* CHANNELS */
-const channels = ["@earnwithmark41"];
+const channels = ["@earnwithmark41","@Marks_community"];
 /* STOCK STATUS */
 let stock = {
     Hotya: "available",
@@ -75,6 +75,7 @@ function createUser(id){
             purchases:0,
             buyQty:0,
             buyPrice:0,
+            lastActive: Date.now(),
             lastRedeemPurchaseCount: 0,
             redeemType: null,
             redeemStep: null,
@@ -123,7 +124,8 @@ saveUsers();
 
     const buttons = [
         [
-            { text:"📢 Channel", url:`https://t.me/${channels[0].replace("@","")}` }
+            { text:"📢 Channel", url:`https://t.me/${channels[0].replace("@","")}` },
+            { text:"📢 Community", url:`https://t.me/${channels[1].replace("@","")}` }
         ],
         [{ text:" Joined ✅", callback_data:"check_join"}]
     ];
@@ -351,6 +353,13 @@ bot.sendMessage(adminId,"❌ GOSH Stock set to OVER");
 
     /* SELECT CODE */
 if(data === "buy_hotya" || data === "buy_gosh"){
+    if(users[chatId].buyRequest){
+    bot.sendMessage(chatId,
+`⚠️ You already have a pending purchase request.
+
+⏳ Please wait for admin response before creating a new one.`);
+    return;
+}
 
 const codeType = data === "buy_hotya" ? "Hotya" : "GOSH";
 
@@ -367,7 +376,7 @@ return;
     bot.sendMessage(chatId,
 `🛒 <b>${codeType} Code Purchase</b>
 
-Select Quantity that you wants  to purchase.`,
+Select the quantity you want to purchase.`,
 {parse_mode: "HTML" ,
     reply_markup:{
  inline_keyboard:[
@@ -387,9 +396,16 @@ Select Quantity that you wants  to purchase.`,
 }
 /* SELECT QUANTITY */
 if(data.startsWith("qty_")){
+    const user = users[chatId];
+    if(user.buyRequest && user.buyStep === "payment"){
+        bot.sendMessage(chatId,
+`⚠️ You already submitted this order.
+
+📸 Please send payment screenshot or wait for admin review.`);
+        return;
+    }
 
     const qty = parseInt(data.split("_")[1]);
-    const user = users[chatId];
 
     if(!user.buyType) return;
 
@@ -436,7 +452,8 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
         if(data.startsWith("buyapprove_")){
             users[userId].buyRequest = false;
             users[userId].waitingAdminMsg = true;
-            users[userId].purchases += 1;
+            users[userId].adminTarget = userId;
+            users[userId].purchases += users[userId].buyQty;
 
 /* ADD TOTAL QUANTITY */
 users[userId].totalQty += users[userId].buyQty;
@@ -467,7 +484,13 @@ if(eligibleBonus > users[userId].bonusGiven){
 Your purchase has been approved.🥳
 
 🎁 Admin will send your code soon..`);
-            bot.sendMessage(adminId,`Send the purchased code to ID: <code>${userId}</code>`,{parse_mode:"HTML"});
+            const u = users[userId];
+            bot.sendMessage(adminId,
+`📦 <b>Delivering Order</b>
+🆔 <b>User ID:</b> <code>${userId}</code>
+📦 <b>Code Type:</b> ${u.buyType}
+🔢 <b>Quantity:</b> ${u.buyQty}`,
+{ parse_mode:"HTML" });
         } else {
     users[userId].buyRequest = false;
     saveUsers();
@@ -499,13 +522,19 @@ users[userId].refProgress = Math.max(0, users[userId].refProgress - 4);
 users[userId].lastRedeemPurchaseCount = users[userId].purchases;
 
 users[userId].waitingAdminMsg = true;
-
+users[userId].adminTarget = userId;
 saveUsers();
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
 
 Your reward is being sent by the admin.`);
-        bot.sendMessage(adminId,`✅ Redeem approved. Send reward to ID: <code>${userId}</code>`,
+        const u = users[userId];
+        bot.sendMessage(adminId,
+`✅ Redeem Approved
+🆔 User: <code>${userId}</code>
+🎯 Type: ${u.redeemType}
+
+Send reward now.`,
 {parse_mode:"HTML"});
     } else {
     users[userId].redeemRequest = false;
@@ -526,8 +555,10 @@ let adminState = { mode:null, targetUser:null };
 
 bot.on("message", async(msg)=>{
     const chatId = msg.chat.id;
-    const text = msg.text || msg.caption || "";
     createUser(chatId);
+    users[chatId].lastActive = Date.now();
+    saveUsers();
+    const text = msg.text || msg.caption || "";
     const user = users[chatId];
 
     if(text.startsWith("/")) return;
@@ -555,7 +586,7 @@ bot.on("message", async(msg)=>{
 }
     /* ================= ADMIN SEND REWARD ================= */
     if(ADMIN_IDS.includes(chatId)){
-    const pendingUser = Object.keys(users).find(id=>users[id].waitingAdminMsg);
+   const pendingUser = Object.keys(users).find(id => users[id].waitingAdminMsg && users[id].adminTarget);
 
     if(pendingUser){
 
@@ -582,7 +613,8 @@ bot.on("message", async(msg)=>{
             bot.sendMessage(pendingUser,text);
         }
 
-        users[pendingUser].waitingAdminMsg=false;
+     users[pendingUser].waitingAdminMsg = false;
+users[pendingUser].adminTarget = null;
         saveUsers();
 
         bot.sendMessage(chatId,
@@ -590,9 +622,10 @@ bot.on("message", async(msg)=>{
 {parse_mode:"HTML",
             reply_markup:{
                 keyboard:[
-                    ["📊 Status","📢 Broadcast"],
-                    ["👤 User Info","✉ Msg User"]
-                ],
+ ["📊 Status","📢 Broadcast"],
+ ["👤 User Info","✉ Msg User"],
+ ["📦 Stock Manager"]
+],
                 resize_keyboard:true
             }
         });
@@ -704,7 +737,7 @@ if(text==="🎁 Redeem"){
 const REQUIRED_REFERRALS = 4;
 const refLeft = REQUIRED_REFERRALS - user.refProgress;
 /* STRICT PURCHASE CHECK */
-if(user.redeems > 0 && user.purchases <= user.lastRedeemPurchaseCount){
+if(user.redeems > 0 && user.purchases - user.lastRedeemPurchaseCount < 1){
     bot.sendMessage(chatId,
 `❌ <b>Redeem Locked</b>
 
@@ -804,6 +837,19 @@ inline_keyboard:[
 }
 
     if(text === "🛒 Buy Code"){
+        if(user.buyRequest){
+    bot.sendMessage(chatId,
+`⚠️ <b>Pending Order Detected</b>
+
+⏳ You already have a purchase request under review.
+
+📸 Please wait for admin approval or rejection before placing a new order.
+
+💡 This prevents duplicate payments & ensures safe processing.`,
+{ parse_mode:"HTML" });
+
+    return;
+}
     bot.sendMessage(chatId,"Select which Code you wants to buy.",{
         reply_markup:{
             inline_keyboard:[
@@ -840,7 +886,14 @@ inline_keyboard:[
         if(text === "📊 Status"){
 
 let totalUsers = Object.keys(users).length;
-let totalPurchases = Object.values(users).reduce((sum,u)=>sum+u.purchases,0);
+
+/* ACTIVE USERS (LAST 24 HOURS) */
+let now = Date.now();
+let activeUsers = Object.values(users).filter(u => 
+    u.lastActive && (now - u.lastActive) <= 24 * 60 * 60 * 1000
+).length;
+let totalTransactions = Object.values(users).reduce((sum,u)=>sum+u.purchases,0);
+let totalQuantity = Object.values(users).reduce((sum,u)=>sum+(u.totalQty||0),0);
 let totalRedeems = Object.values(users).reduce((sum,u)=>sum+u.redeems,0);
 
 /* STOCK STATUS */
@@ -850,7 +903,10 @@ let goshStock = stock.GOSH === "available" ? "✅ Available" : "❌ Over";
 bot.sendMessage(chatId,
 `📊 BOT STATUS
 👤 Total Users: ${totalUsers}
-🛒 Total Purchases: ${totalPurchases}
+⚡ Active Users: ${activeUsers}
+
+🛒 Total Orders: ${totalTransactions}
+📦 Total Quantity Sold: ${totalQuantity}
 🎁 Total Redeems: ${totalRedeems}
 
 📦 STOCK STATUS
