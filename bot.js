@@ -23,7 +23,7 @@ const botUsername = "MARKS_ZONEBot";
 const ADMIN_IDS = [8521844327,8809115899];
 
 /* CHANNELS */
-const channels = ["@earnwithmark41","@Marks_community"];
+const channels = ["@earnwithmark41"];
 /* STOCK STATUS */
 let stock = {
     Hotya: "available",
@@ -75,8 +75,11 @@ function createUser(id){
             purchases:0,
             buyQty:0,
             buyPrice:0,
+            lastRedeemPurchaseCount: 0,
             redeemType: null,
             redeemStep: null,
+            totalQty: 0,
+            bonusGiven: 0,
             redeemRequest:false,
             buyRequest:false,
             buyRefs:0,
@@ -120,8 +123,7 @@ saveUsers();
 
     const buttons = [
         [
-            { text:"📢 Channel", url:`https://t.me/${channels[0].replace("@","")}` },
-            { text:"📢 Community", url:`https://t.me/${channels[1].replace("@","")}` }
+            { text:"📢 Channel", url:`https://t.me/${channels[0].replace("@","")}` }
         ],
         [{ text:" Joined ✅", callback_data:"check_join"}]
     ];
@@ -434,9 +436,31 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
         if(data.startsWith("buyapprove_")){
             users[userId].buyRequest = false;
             users[userId].waitingAdminMsg = true;
-            users[userId].purchases += 1; 
-              // +1 referral bonus
-    users[userId].refProgress += 1;
+            users[userId].purchases += 1;
+
+/* ADD TOTAL QUANTITY */
+users[userId].totalQty += users[userId].buyQty;
+
+/* BONUS SYSTEM (EVERY 5 QTY) */
+let eligibleBonus = Math.floor(users[userId].totalQty / 5);
+
+if(eligibleBonus > users[userId].bonusGiven){
+
+    let newBonus = eligibleBonus - users[userId].bonusGiven;
+
+    users[userId].refProgress += (newBonus * 4);
+    users[userId].bonusGiven = eligibleBonus;
+
+    bot.sendMessage(userId,
+`🎁 BONUS UNLOCKED!
+
+🔥 You purchased ${users[userId].totalQty} total codes!
+
+🎉 You received +${newBonus * 4} referral progress
+
+🚀 You can now redeem reward!`);
+}
+           
             saveUsers();
             bot.sendMessage(userId,`✅ Payment Verified!
 
@@ -468,10 +492,15 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
 
     if(data.startsWith("approve_")){
         users[userId].redeems += 1;
-        users[userId].redeemRequest = false;
-        users[userId].refProgress = Math.max(0, users[userId].refProgress - 4);
-        users[userId].waitingAdminMsg = true;
-        saveUsers();
+users[userId].redeemRequest = false;
+users[userId].refProgress = Math.max(0, users[userId].refProgress - 4);
+
+/* STRICT SYSTEM UPDATE */
+users[userId].lastRedeemPurchaseCount = users[userId].purchases;
+
+users[userId].waitingAdminMsg = true;
+
+saveUsers();
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
 
@@ -674,7 +703,21 @@ if(text==="🎁 Redeem"){
 
 const REQUIRED_REFERRALS = 4;
 const refLeft = REQUIRED_REFERRALS - user.refProgress;
+/* STRICT PURCHASE CHECK */
+if(user.redeems > 0 && user.purchases <= user.lastRedeemPurchaseCount){
+    bot.sendMessage(chatId,
+`❌ <b>Redeem Locked</b>
 
+⚠️ You must purchase at least <b>1 new code</b> before redeeming again.
+
+🛒 Your Purchases: ${user.purchases}
+🔒 Last Redeem Based On: ${user.lastRedeemPurchaseCount}
+
+💡 Buy a code to unlock next redeem.`,
+{ parse_mode:"HTML" });
+
+    return;
+}
 /* PROGRESS BAR */
 let progress = user.refProgress;
 let bar = "░░░░░░░░░░";
@@ -783,9 +826,10 @@ inline_keyboard:[
             bot.sendMessage(chatId,"Action Cancelled ❌",{
                 reply_markup:{
                     keyboard:[
-                        ["📊 Status","📢 Broadcast"],
-                        ["👤 User Info","✉ Msg User"]
-                    ],
+ ["📊 Status","📢 Broadcast"],
+ ["👤 User Info","✉ Msg User"],
+ ["📦 Stock Manager"]
+],
                     resize_keyboard:true
                 }
             });
