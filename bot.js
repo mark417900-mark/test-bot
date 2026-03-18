@@ -774,7 +774,7 @@ ${link}
     }
 
 if(text==="🎁 Redeem"){
-    const REQUIRED_REFERRALS = 2; // Set your referral requirement
+    const REQUIRED_REFERRALS = 1; // Set your referral requirement
     const refLeft = REQUIRED_REFERRALS - user.refProgress;
 
     // 1️⃣ First check referral progress
