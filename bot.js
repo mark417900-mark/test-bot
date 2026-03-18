@@ -75,6 +75,9 @@ function createUser(id){
             purchases:0,
             buyQty:0,
             buyPrice:0,
+            transactionCount: 0,
+            bonusUnlocked: 0,
+            redeemLimit: 0,
             lastActive: Date.now(),
             lastRedeemPurchaseCount: 0,
             redeemType: null,
@@ -254,8 +257,9 @@ bot.sendMessage(adminId,
 
 🆔 User ID: <code>${userId}</code>
 👥 Total Referrals: ${u.ref}
-📊 Referral Progress: ${u.refProgress}/4
-🛒 Purchases: ${u.purchases}
+📊 Reward Progress: ${u.refProgress}/4
+🛒 <b>Transactions :</b> ${user.transactionCount || 0}
+🎯 <b>Redeem Limit :</b> ${user.redeemLimit || 0}
 🎁 Redeems: ${u.redeems}
 👤 Referred By: ${u.referredBy ? `<code>${u.referredBy}</code>` : "None"}`,
 { parse_mode:"HTML" });
@@ -453,13 +457,32 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
             users[userId].buyRequest = false;
             users[userId].waitingAdminMsg = true;
             users[userId].adminTarget = userId;
-            users[userId].purchases += users[userId].buyQty;
+            /* SUCCESSFUL TRANSACTION */
+users[userId].purchases += 1;
+users[userId].transactionCount += 1;
 
-/* ADD TOTAL QUANTITY */
-users[userId].totalQty += users[userId].buyQty;
+/* INCREASE REDEEM LIMIT */
+users[userId].redeemLimit += 1;
 
-/* BONUS SYSTEM (EVERY 5 QTY) */
-let eligibleBonus = Math.floor(users[userId].totalQty / 5);
+/* BONUS SYSTEM (EVERY 5 TRANSACTIONS) */
+let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
+
+if(eligibleBonus > users[userId].bonusUnlocked){
+
+    let newBonus = eligibleBonus - users[userId].bonusUnlocked;
+
+    users[userId].refProgress += (newBonus * 4);
+    users[userId].bonusUnlocked = eligibleBonus;
+
+    bot.sendMessage(userId,
+`🎁 BONUS UNLOCKED!
+
+🔥 You completed ${users[userId].transactionCount} transactions!
+
+🎉 You received +${newBonus * 4} referral progress
+
+🚀 You can now redeem reward!`);
+}
 
 if(eligibleBonus > users[userId].bonusGiven){
 
@@ -586,7 +609,9 @@ bot.on("message", async(msg)=>{
 }
     /* ================= ADMIN SEND REWARD ================= */
     if(ADMIN_IDS.includes(chatId)){
-   const pendingUser = Object.keys(users).find(id => users[id].waitingAdminMsg && users[id].adminTarget);
+  const pendingUser = Object.keys(users).find(
+  id => users[id].waitingAdminMsg === true
+);
 
     if(pendingUser){
 
@@ -712,11 +737,12 @@ bot.sendMessage(chatId,
 `      👤 <b>Your Profile</b>
  <b>User ID:</b> <code>${chatId}</code>
 
-🛒 <b>Purchases :</b> ${user.purchases}
 🎁 <b>Redeems :</b> ${user.redeems}
 👥 <b>Total Referrals :</b> ${user.ref}
+🛒 <b>Transactions :</b> ${user.transactionCount || 0}
+🎯 <b>Redeem Limit :</b> ${user.redeemLimit || 0}
 
-📊 <b>Referral Progress</b>
+📊 <b>Reward Progress</b>
 ${bar} ${progress}/4
 `,
 {parse_mode:"HTML"});
@@ -733,7 +759,17 @@ ${link}
     }
 
 if(text==="🎁 Redeem"){
+if(user.redeems >= user.redeemLimit){
+    bot.sendMessage(chatId,
+`❌ <b>Redeem Limit Reached</b>
 
+🎯 Your Limit: ${user.redeemLimit}
+🎁 Used: ${user.redeems}
+
+💡 Complete more purchases to increase your redeem limit.`,
+{parse_mode:"HTML"});
+    return;
+}
 const REQUIRED_REFERRALS = 4;
 const refLeft = REQUIRED_REFERRALS - user.refProgress;
 /* STRICT PURCHASE CHECK */
@@ -981,10 +1017,19 @@ return;
                 return;
             }
             const u = users[id];
+            // Fetch Telegram user info
+    let username = "Not set";
+    try {
+        const chat = await bot.getChat(id);
+        if(chat.username) username = "@" + chat.username;
+    } catch (e) {
+        console.log("Could not fetch username for", id);
+    }
             bot.sendMessage(chatId,
 `👤 USER PROFILE
 
 🆔 User ID: ${id}
+👤 Username: ${username}
 👥 Total Referrals: ${u.ref}
 📊 Referal Progress: ${u.refProgress}/4
 🛒 Purchases: ${u.purchases}
