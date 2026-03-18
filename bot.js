@@ -1010,7 +1010,7 @@ return;
 🛒 Total Purchases: ${u.transactionCount || 0}
 📦 Total Quantity Bought: ${u.totalQty || 0}
 💰 Last Purchase Price: ₹${u.buyPrice || 0}
-👤 Referred By: <code>${u.referredBy || "None"}</code>,
+👤 Referred By: <code>${u.referredBy || "None"}</code>`,
 { parse_mode: "HTML",
 reply_markup:{
 keyboard:[
@@ -1087,4 +1087,3 @@ resize_keyboard:true
     }
 
 });
-}); 
