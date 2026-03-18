@@ -143,14 +143,59 @@ bot.on("callback_query", async(query)=>{
     const data = query.data;
     const adminId = query.from.id;
     /* JOIN CHECK */
-    if(data==="check_join"){
+   if(data === "check_join"){
 
-const joined = await checkMembership(chatId);
+    const joined = await checkMembership(chatId);
 
-if(!joined){
+    if(!joined){
+        // Show alert popup (no new message, just a popup)
+        bot.answerCallbackQuery(query.id, { 
+            text: "❌ Please join all channels first.", 
+            show_alert: true 
+        });
+        return;
+    }
 
-bot.sendMessage(chatId,"❌ Please join all channels first.");
-return;
+    // ✅ User has joined all channels, grant access
+    const user = users[chatId];
+
+    if(user.tempRef && !user.referredBy){
+        const referrerId = user.tempRef;
+        if(users[referrerId]){
+            user.referredBy = referrerId;
+            users[referrerId].ref += 1;
+            users[referrerId].refProgress += 1;
+            users[referrerId].invited.push(chatId);
+
+            bot.sendMessage(referrerId,
+                `🎉 New Referral Joined using your link!
+
+📊 Your Referral Progress:${users[referrerId].refProgress}/4
+
+Invite more friends to unlock rewards faster.🎁`
+            );
+        }
+        user.tempRef = null;
+        saveUsers();
+    }
+
+    // Grant access
+    bot.sendMessage(chatId, `✅ Access Granted!`, {
+        reply_markup: {
+            keyboard: [
+                ["👤 Profile","👥 Refer"],
+                ["🎁 Redeem","Help ❓"],
+                ["🛒 Buy Code"]
+            ],
+            resize_keyboard: true
+        }
+    });
+
+    // Destroy the inline buttons on the original join message
+    bot.editMessageReplyMarkup(
+        { inline_keyboard: [] }, 
+        { chat_id: query.message.chat.id, message_id: query.message.message_id }
+    );
 }
 
 
@@ -470,7 +515,12 @@ if(data.startsWith("buyapprove_") || data.startsWith("buyreject_")){
             let newBonus = eligibleBonus - users[userId].bonusUnlocked;
             users[userId].refProgress += (newBonus * 4); // +4 redeem code bonus
             users[userId].bonusUnlocked = eligibleBonus;
+        }
+        bot.sendMessage(userId,`✅ Payment Verified!
+Your purchase has been approved.🥳
 
+Admin will send your code soon..🎁`);
+              
             bot.sendMessage(userId,
 `🎁 BONUS UNLOCKED!
 
@@ -479,14 +529,9 @@ if(data.startsWith("buyapprove_") || data.startsWith("buyreject_")){
 🎉 You received +${newBonus * 4} referral progress
 
 🚀 You can now redeem reward!`);
-        }
+        
 
         saveUsers();
-
-        bot.sendMessage(userId,`✅ Payment Verified!
-Your purchase has been approved.🥳
-
-Admin will send your code soon..🎁`);
 
         const u = users[userId];
         bot.sendMessage(adminId,
@@ -741,42 +786,20 @@ ${link}
     }
 
 if(text==="🎁 Redeem"){
-if(user.redeems >= user.redeemLimit){
-    bot.sendMessage(chatId,
-`❌ <b>Redeem Limit Reached</b>
+    const REQUIRED_REFERRALS = 2; // Set your referral requirement
+    const refLeft = REQUIRED_REFERRALS - user.refProgress;
 
-🎯 Your Limit: ${user.redeemLimit}
-🎁 Used: ${user.redeems}
+    // 1️⃣ First check referral progress
+    if(user.refProgress < REQUIRED_REFERRALS){
+        let progress = user.refProgress;
+        let bar = "░░░░░░░░░░";
 
-💡 Complete more purchases to increase your redeem limit.`,
-{parse_mode:"HTML"});
-    return;
-}
-const REQUIRED_REFERRALS = 2; //temp check
-const refLeft = REQUIRED_REFERRALS - user.refProgress;
-/* STRICT PURCHASE CHECK */
-if(user.redeems > 0 && user.purchases - user.lastRedeemPurchaseCount < 1){
-    bot.sendMessage(chatId,
-`❌ <b>Redeem Locked</b>
-⚠️ You must purchase at least <b>1 new code</b>.
-💡 Buy a code to unlock next redeem.`,
-{ parse_mode:"HTML" });
+        if(progress == 1) bar = "██░░░░░░░░";
+        if(progress == 2) bar = "████░░░░░░";
+        if(progress == 3) bar = "██████░░░░";
+        if(progress >= 4) bar = "██████████";
 
-    return;
-}
-/* PROGRESS BAR */
-let progress = user.refProgress;
-let bar = "░░░░░░░░░░";
-
-if(progress==1) bar="██░░░░░░░░";
-if(progress==2) bar="████░░░░░░";
-if(progress==3) bar="██████░░░░";
-if(progress>=4) bar="██████████";
-
-/* LOCKED REDEEM MESSAGE */
-if(user.refProgress < REQUIRED_REFERRALS){
-
-bot.sendMessage(chatId,
+        bot.sendMessage(chatId,
 `<b>REDEEM LOCKED</b> 🔒
 
 You need <b>${refLeft} more referrals</b> to unlock your reward.
@@ -795,36 +818,47 @@ Complete <b>5 successful purchases</b> and instantly get <b>+4 referral progress
 
 ━━━━━━━━━━━━━━━━━━━━━
 💡 <i>Tip: Share your link in groups to get referrals quickly.</i>`,
-{ parse_mode:"HTML" }
-);
+        { parse_mode:"HTML" }
+        );
+        return; // Stop further checks if referral progress is not enough
+    }
 
-return;
-}
+    // 2️⃣ Then check redeem limit
+    if(user.redeems >= user.redeemLimit){
+        bot.sendMessage(chatId,
+`❌ <b>Redeem Limit Reached</b>
 
-/* PREVENT MULTIPLE REQUEST */
-if(user.redeemRequest){
-    bot.sendMessage(chatId,"⚠️ Redeem request already submitted.\n⏳ Please wait for admin approval.");
-    return;
-}
+🎯 Your Limit: ${user.redeemLimit}
+🎁 Used: ${user.redeems}
 
-/* SHOW SELECT MENU ONLY */
-user.redeemStep = "select_type";
-saveUsers();
+💡 Complete more purchases to increase your redeem limit.`,
+        {parse_mode:"HTML"});
+        return;
+    }
 
-bot.sendMessage(chatId,
+    // 3️⃣ Prevent multiple requests
+    if(user.redeemRequest){
+        bot.sendMessage(chatId,"⚠️ Redeem request already submitted.\n⏳ Please wait for admin approval.");
+        return;
+    }
+
+    // 4️⃣ Show redeem menu
+    user.redeemStep = "select_type";
+    saveUsers();
+
+    bot.sendMessage(chatId,
 `🎁 <b>Select Redeem Code</b>`,
-{
-parse_mode:"HTML",
-reply_markup:{
-inline_keyboard:[
-[
-{ text:"🔥 Hotya", callback_data:"redeem_hotya"},
-{ text:"⚡ GOSH", callback_data:"redeem_gosh"}
-]
-]
-}
-});
-
+    {
+        parse_mode:"HTML",
+        reply_markup:{
+            inline_keyboard:[
+                [
+                    { text:"🔥 Hotya", callback_data:"redeem_hotya"},
+                    { text:"⚡ GOSH", callback_data:"redeem_gosh"}
+                ]
+            ]
+        }
+    });
 }
 
     if(text==="Help ❓"){
