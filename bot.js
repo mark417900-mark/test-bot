@@ -76,7 +76,7 @@ function createUser(id){
             buyPrice:0,
             transactionCount: 0,
             bonusUnlocked: 0,
-            redeemLimit: 0,
+            redeemLimit: 1,
             lastActive: Date.now(),
             lastRedeemPurchaseCount: 0,
             redeemType: null,
@@ -484,10 +484,9 @@ if(data.startsWith("buyapprove_") || data.startsWith("buyreject_")){
         saveUsers();
 
         bot.sendMessage(userId,`✅ Payment Verified!
-
 Your purchase has been approved.🥳
 
-🎁 Admin will send your code soon..`);
+Admin will send your code soon..🎁`);
 
         const u = users[userId];
         bot.sendMessage(adminId,
@@ -753,18 +752,13 @@ if(user.redeems >= user.redeemLimit){
 {parse_mode:"HTML"});
     return;
 }
-const REQUIRED_REFERRALS = 4;
+const REQUIRED_REFERRALS = 1; //temp check
 const refLeft = REQUIRED_REFERRALS - user.refProgress;
 /* STRICT PURCHASE CHECK */
 if(user.redeems > 0 && user.purchases - user.lastRedeemPurchaseCount < 1){
     bot.sendMessage(chatId,
 `❌ <b>Redeem Locked</b>
-
-⚠️ You must purchase at least <b>1 new code</b> before redeeming again.
-
-🛒 Your Purchases: ${user.purchases}
-🔒 Last Redeem Based On: ${user.lastRedeemPurchaseCount}
-
+⚠️ You must purchase at least <b>1 new code</b>.
 💡 Buy a code to unlock next redeem.`,
 { parse_mode:"HTML" });
 
@@ -783,20 +777,19 @@ if(progress>=4) bar="██████████";
 if(user.refProgress < REQUIRED_REFERRALS){
 
 bot.sendMessage(chatId,
-`🎁 <b>REDEEM LOCKED</b> 🔒
+`<b>REDEEM LOCKED</b> 🔒
 
 You need <b>${refLeft} more referrals</b> to unlock your reward.
 
 ━━━━━━━━━━━━━━━━━━━━
 📊 <b>Referral Progress</b>
-
 ${bar} ${user.refProgress}/4
 
 👥 <b>Option 1 (Free)</b>
 Invite friends using your referral link.
 
 ⚡ <b>Option 2 (Faster)</b>
-Buy any code and get <b>+1 referral bonus</b> instantly.
+Complete <b>5 successful purchases</b> and instantly get <b>+4 referral progress</b>
 
 🚀 Unlock redeem faster without waiting for friends.
 
@@ -862,9 +855,7 @@ inline_keyboard:[
 
 ⏳ You already have a purchase request under review.
 
-📸 Please wait for admin approval or rejection before placing a new order.
-
-💡 This prevents duplicate payments & ensures safe processing.`,
+📸 Please wait for admin approval or rejection before placing a new order.`,
 { parse_mode:"HTML" });
 
     return;
@@ -1008,18 +999,19 @@ return;
     } catch (e) {
         console.log("Could not fetch username for", id);
     }
-            bot.sendMessage(chatId,
-`👤 USER PROFILE
+           bot.sendMessage(chatId,
+`👤 <b>USER PROFILE</b>
 
-🆔 User ID: ${id}
+🆔 User ID: <code>${id}</code>
 👤 Username: ${username}
 👥 Total Referrals: ${u.ref}
-📊 Referal Progress: ${u.refProgress}/4
-🛒 Purchases: ${u.purchases}
-🎁 Redeems: ${u.redeems}
-👤 Referred By: <code>${u.referredBy || "None"}</code>`,
-{
-parse_mode:"HTML",
+📊 Referral Progress: ${u.refProgress}/4
+🎁 Redeems: ${u.redeems}/${u.redeemLimit || 0}
+🛒 Total Purchases: ${u.transactionCount || 0}
+📦 Total Quantity Bought: ${u.totalQty || 0}
+💰 Last Purchase Price: ₹${u.buyPrice || 0}
+👤 Referred By: <code>${u.referredBy || "None"}</code>,
+{ parse_mode: "HTML",
 reply_markup:{
 keyboard:[
 ["📊 Status","📢 Broadcast"],
