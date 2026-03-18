@@ -752,7 +752,7 @@ if(user.redeems >= user.redeemLimit){
 {parse_mode:"HTML"});
     return;
 }
-const REQUIRED_REFERRALS = 1; //temp check
+const REQUIRED_REFERRALS = 2; //temp check
 const refLeft = REQUIRED_REFERRALS - user.refProgress;
 /* STRICT PURCHASE CHECK */
 if(user.redeems > 0 && user.purchases - user.lastRedeemPurchaseCount < 1){
