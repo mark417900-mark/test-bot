@@ -75,6 +75,8 @@ function createUser(id){
             purchases:0,
             buyQty:0,
             buyPrice:0,
+            redeemType: null,
+            redeemStep: null,
             redeemRequest:false,
             buyRequest:false,
             buyRefs:0,
@@ -255,6 +257,70 @@ bot.sendMessage(adminId,
 { parse_mode:"HTML" });
 
         }
+// redeem request controller
+    if(data === "redeem_hotya" || data === "redeem_gosh"){
+
+const user = users[chatId];
+
+if(!user) return;
+
+/* PREVENT MULTIPLE */
+if(user.redeemRequest){
+    bot.sendMessage(chatId,"⚠️ Already requested.");
+    return;
+}
+
+/* ELIGIBILITY */
+if(user.refProgress < 4){
+    bot.sendMessage(chatId,"❌ Not eligible.");
+    return;
+}
+
+/* STOCK */
+const type = data === "redeem_hotya" ? "Hotya" : "GOSH";
+
+if(stock[type] === "over"){
+    bot.sendMessage(chatId,`❌ ${type} out of stock.`);
+    return;
+}
+
+/* SAVE */
+user.redeemType = type;
+user.redeemRequest = true;
+saveUsers();
+
+/* ADMIN SEND */
+ADMIN_IDS.forEach(admin=>{
+    bot.sendMessage(admin,
+`🎁 REDEEM REQUEST
+
+👤 User ID: <code>${chatId}</code>
+🎯 Code Type: ${type}
+
+👥 Total Referrals: ${user.ref}
+📊 Progress: ${user.refProgress}/4
+🛒 Purchases: ${user.purchases}
+🎁 Redeems: ${user.redeems}`,
+{
+parse_mode:"HTML",
+reply_markup:{
+inline_keyboard:[
+[
+{ text:"✅ Approve", callback_data:`approve_${chatId}` },
+{ text:"❌ Reject", callback_data:`reject_${chatId}` }
+]
+]
+}
+});
+});
+
+/* USER MSG */
+bot.sendMessage(chatId,
+`✅ Redeem request sent!
+🎯 Selected Code: ${type}
+⏳ Wait for admin approval.`);
+
+}
     // stock controler
     if(data === "hotya_available"){
 stock.Hotya = "available";
@@ -604,7 +670,7 @@ ${link}
 `);
     }
 
-    if(text==="🎁 Redeem"){
+if(text==="🎁 Redeem"){
 
 const REQUIRED_REFERRALS = 4;
 const refLeft = REQUIRED_REFERRALS - user.refProgress;
@@ -647,33 +713,30 @@ Buy any code and get <b>+1 referral bonus</b> instantly.
 return;
 }
 
-    /* PREVENT MULTIPLE REQUESTS */
-    if(user.redeemRequest){
-        bot.sendMessage(chatId,"⚠️ Redeem request already submitted.\n⏳ Please wait for admin approval.");
-        return;
-    }
+/* PREVENT MULTIPLE REQUEST */
+if(user.redeemRequest){
+    bot.sendMessage(chatId,"⚠️ Redeem request already submitted.\n⏳ Please wait for admin approval.");
+    return;
+}
 
-    user.redeemRequest = true;
-    saveUsers();
+/* SHOW SELECT MENU ONLY */
+user.redeemStep = "select_type";
+saveUsers();
 
-    ADMIN_IDS.forEach(admin=>{
-        bot.sendMessage(admin,
-            `🎁 REDEEM REQUEST\n👤 User ID: <code>${chatId}</code>\n\n👥 Total Referrals: ${user.ref}\n📊 Progress: ${user.refProgress}/4\n\n🛒 Purchases: ${user.purchases}\n🎁 Previous Redeems: ${user.redeems}`,
-            { parse_mode:"HTML",
-                reply_markup:{
-                    inline_keyboard:[
-                        [
-                            { text:"✅ Approve", callback_data:`approve_${chatId}` },
-                            { text:"❌ Reject", callback_data:`reject_${chatId}` }
-                        ]
-                    ]
-                }
-            });
-    });
+bot.sendMessage(chatId,
+`🎁 <b>Select Redeem Code</b>`,
+{
+parse_mode:"HTML",
+reply_markup:{
+inline_keyboard:[
+[
+{ text:"🔥 Hotya", callback_data:"redeem_hotya"},
+{ text:"⚡ GOSH", callback_data:"redeem_gosh"}
+]
+]
+}
+});
 
-    bot.sendMessage(chatId,`✅ Your redeem request has been sent to the admin.
-
-⏳ Please wait for approval.`);
 }
 
     if(text==="Help ❓"){
