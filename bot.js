@@ -72,7 +72,6 @@ function createUser(id){
             ref:0,
             refProgress:0,
             redeems:0,
-            purchases:0,
             buyQty:0,
             buyPrice:0,
             transactionCount: 0,
@@ -448,33 +447,31 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
         }
     });
             }
-    /* ADMIN APPROVE/REJECT PURCHASE */
-    if(data.startsWith("buyapprove_") || data.startsWith("buyreject_")){
-        const userId = data.split("_")[1];
-        if(!ADMIN_IDS.includes(adminId)) return;
+  /* ADMIN APPROVE/REJECT PURCHASE */
+if(data.startsWith("buyapprove_") || data.startsWith("buyreject_")){
+    const userId = data.split("_")[1];
+    if(!ADMIN_IDS.includes(adminId)) return;
 
-        if(data.startsWith("buyapprove_")){
-            users[userId].buyRequest = false;
-            users[userId].waitingAdminMsg = true;
-            users[userId].adminTarget = userId;
-            /* SUCCESSFUL TRANSACTION */
-users[userId].purchases += 1;
-users[userId].transactionCount += 1;
+    if(data.startsWith("buyapprove_")){
+        users[userId].buyRequest = false;
+        users[userId].waitingAdminMsg = true;
+        users[userId].adminTarget = userId;
 
-/* INCREASE REDEEM LIMIT */
-users[userId].redeemLimit += 1;
+        /* SUCCESSFUL TRANSACTION */
+        users[userId].transactionCount += 1;
 
-/* BONUS SYSTEM (EVERY 5 TRANSACTIONS) */
-let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
+        /* INCREASE REDEEM LIMIT */
+        users[userId].redeemLimit += 1;
 
-if(eligibleBonus > users[userId].bonusUnlocked){
+        /* BONUS SYSTEM (EVERY 5 TRANSACTIONS) */
+        let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
 
-    let newBonus = eligibleBonus - users[userId].bonusUnlocked;
+        if(eligibleBonus > users[userId].bonusUnlocked){
+            let newBonus = eligibleBonus - users[userId].bonusUnlocked;
+            users[userId].refProgress += (newBonus * 4); // +4 redeem code bonus
+            users[userId].bonusUnlocked = eligibleBonus;
 
-    users[userId].refProgress += (newBonus * 4);
-    users[userId].bonusUnlocked = eligibleBonus;
-
-    bot.sendMessage(userId,
+            bot.sendMessage(userId,
 `🎁 BONUS UNLOCKED!
 
 🔥 You completed ${users[userId].transactionCount} transactions!
@@ -482,54 +479,40 @@ if(eligibleBonus > users[userId].bonusUnlocked){
 🎉 You received +${newBonus * 4} referral progress
 
 🚀 You can now redeem reward!`);
-}
+        }
 
-if(eligibleBonus > users[userId].bonusGiven){
+        saveUsers();
 
-    let newBonus = eligibleBonus - users[userId].bonusGiven;
-
-    users[userId].refProgress += (newBonus * 4);
-    users[userId].bonusGiven = eligibleBonus;
-
-    bot.sendMessage(userId,
-`🎁 BONUS UNLOCKED!
-
-🔥 You purchased ${users[userId].totalQty} total codes!
-
-🎉 You received +${newBonus * 4} referral progress
-
-🚀 You can now redeem reward!`);
-}
-           
-            saveUsers();
-            bot.sendMessage(userId,`✅ Payment Verified!
+        bot.sendMessage(userId,`✅ Payment Verified!
 
 Your purchase has been approved.🥳
 
 🎁 Admin will send your code soon..`);
-            const u = users[userId];
-            bot.sendMessage(adminId,
+
+        const u = users[userId];
+        bot.sendMessage(adminId,
 `📦 <b>Delivering Order</b>
 🆔 <b>User ID:</b> <code>${userId}</code>
 📦 <b>Code Type:</b> ${u.buyType}
 🔢 <b>Quantity:</b> ${u.buyQty}`,
-{ parse_mode:"HTML" });
-        } else {
-    users[userId].buyRequest = false;
-    saveUsers();
+        { parse_mode:"HTML" });
+    } else {
+        users[userId].buyRequest = false;
+        saveUsers();
 
-    bot.sendMessage(userId,`❌ Payment Not Verified
+        bot.sendMessage(userId,`❌ Payment Not Verified
 
 Your purchase request was rejected.💔
 
 If you believe this is a mistake, contact support.`);
 
-    bot.sendMessage(adminId,
+        bot.sendMessage(adminId,
 `❌ Purchase Rejected ID: <code>${userId}</code>`,
-{ parse_mode:"HTML" });
-}
-        bot.deleteMessage(query.message.chat.id,query.message.message_id).catch(()=>{});
+        { parse_mode:"HTML" });
     }
+
+    bot.deleteMessage(query.message.chat.id, query.message.message_id).catch(()=>{});
+}
 
 /* APPROVE/REJECT REDEEM */
 if(data.startsWith("approve_") || data.startsWith("reject_")){
