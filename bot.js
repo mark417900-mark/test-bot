@@ -143,12 +143,10 @@ bot.on("callback_query", async(query)=>{
     const data = query.data;
     const adminId = query.from.id;
     /* JOIN CHECK */
-   if(data === "check_join"){
-
+ if(data === "check_join"){
     const joined = await checkMembership(chatId);
 
     if(!joined){
-        // Show alert popup (no new message, just a popup)
         bot.answerCallbackQuery(query.id, { 
             text: "❌ Please join all channels first.", 
             show_alert: true 
@@ -156,7 +154,6 @@ bot.on("callback_query", async(query)=>{
         return;
     }
 
-    // ✅ User has joined all channels, grant access
     const user = users[chatId];
 
     if(user.tempRef && !user.referredBy){
@@ -169,9 +166,7 @@ bot.on("callback_query", async(query)=>{
 
             bot.sendMessage(referrerId,
                 `🎉 New Referral Joined using your link!
-
 📊 Your Referral Progress:${users[referrerId].refProgress}/4
-
 Invite more friends to unlock rewards faster.🎁`
             );
         }
