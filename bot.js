@@ -1087,3 +1087,4 @@ resize_keyboard:true
     }
 
 });
+}); 
