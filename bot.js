@@ -292,10 +292,6 @@ bot.sendMessage(chatId,`❌ ${codeType} Code is currently Out of Stock.`);
 return;
 }
 
-users[chatId].buyType = codeType;
-users[chatId].buyStep = "select_qty";
-saveUsers();
-
     users[chatId].buyType = codeType;
     users[chatId].buyStep = "select_qty";
     saveUsers();
@@ -310,7 +306,7 @@ Select Quantity that you wants  to purchase.`,
   [
    {text:"1",callback_data:"qty_1"},
    {text:"2",callback_data:"qty_2"},
-   {text:"3",callback_data:"qty_3"}
+   {text:"3",callback_data:"qty_3"},
     {text:"4",callback_data:"qty_4"}
   ],
   [
