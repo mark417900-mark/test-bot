@@ -144,15 +144,17 @@ bot.on("callback_query", async(query)=>{
     const adminId = query.from.id;
     /* JOIN CHECK */
 /* JOIN CHECK */
-if(data === "check_join"){
-    const joined = await checkMembership(chatId);
-    if(!joined){
-        bot.answerCallbackQuery(query.id, { 
-            text: "❌ Please join all channels first.", 
-            show_alert: true 
-        });
-        return;
-    }
+// JOIN CHECK
+    if(data === "check_join") {
+        const joined = await checkMembership(chatId);
+        if(!joined){
+            bot.answerCallbackQuery(query.id, { 
+                text: "❌ Please join all channels first.", 
+                show_alert: true 
+            });
+            return;
+        }
+
 
     const user = users[chatId];
 
