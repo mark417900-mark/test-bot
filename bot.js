@@ -15,7 +15,7 @@ app.listen(PORT, () => {
 });
 
 /* TELEGRAM BOT */
-const token = "8102453698:AAGZMJbProlxixjP-9Tk-kX2sNAsXQnXncc";
+const token = "8605121015:AAFz-OwQB540Lzs7ak8zxSGS_dopDApoetU";
 const bot = new TelegramBot(token, { polling: true });
 const botUsername = "MARKS_ZONEBot";
 
