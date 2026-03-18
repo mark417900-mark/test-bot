@@ -143,9 +143,9 @@ bot.on("callback_query", async(query)=>{
     const data = query.data;
     const adminId = query.from.id;
     /* JOIN CHECK */
- if(data === "check_join"){
+/* JOIN CHECK */
+if(data === "check_join"){
     const joined = await checkMembership(chatId);
-
     if(!joined){
         bot.answerCallbackQuery(query.id, { 
             text: "❌ Please join all channels first.", 
@@ -174,7 +174,7 @@ Invite more friends to unlock rewards faster.🎁`
         saveUsers();
     }
 
-    // Grant access
+    // Grant access only once
     bot.sendMessage(chatId, `✅ Access Granted!`, {
         reply_markup: {
             keyboard: [
@@ -186,7 +186,7 @@ Invite more friends to unlock rewards faster.🎁`
         }
     });
 
-    // Destroy the inline buttons on the original join message
+    // Destroy inline buttons
     bot.editMessageReplyMarkup(
         { inline_keyboard: [] }, 
         { chat_id: query.message.chat.id, message_id: query.message.message_id }
@@ -195,7 +195,6 @@ Invite more friends to unlock rewards faster.🎁`
 
 
     const user = users[chatId];
-
     if(user.tempRef && !user.referredBy){
 
         const referrerId = user.tempRef;
@@ -222,18 +221,6 @@ Invite more friends to unlock rewards faster.🎁`
 
         saveUsers();
     }
-
-    bot.sendMessage(chatId,`✅ Access Granted!`,{
-        reply_markup:{
-            keyboard:[
-                ["👤 Profile","👥 Refer"],
-                ["🎁 Redeem","Help ❓"],
-                ["🛒 Buy Code"]
-            ],
-            resize_keyboard:true
-        }
-    });
-}
 if(data === "help_claim"){
 
 bot.sendPhoto(chatId,"claim.jpg",{
