@@ -269,11 +269,11 @@ if(user.redeemRequest){
     return;
 }
 
-/* ELIGIBILITY */
+/* ELIGIBILITY 
 if(user.refProgress < 4){
     bot.sendMessage(chatId,"❌ Not eligible.");
     return;
-}
+} */
 
 /* STOCK */
 const type = data === "redeem_hotya" ? "Hotya" : "GOSH";
