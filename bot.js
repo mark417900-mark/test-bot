@@ -138,7 +138,7 @@ saveUsers();
 });
 
 /* CALLBACK HANDLER */
-bot.on("callback_query", async(query)=>{
+bot.on("callback_query", async (query) => {
     const chatId = query.message.chat.id;
     const data = query.data;
     const adminId = query.from.id;
@@ -148,6 +148,7 @@ bot.on("callback_query", async(query)=>{
         const joined = await checkMembership(chatId);
 
         if (!joined) {
+            bot.answerCallbackQuery(query.id, {
                 text: "❌ Please join all channels first.",
                 show_alert: true
             });
@@ -156,7 +157,6 @@ bot.on("callback_query", async(query)=>{
 
         const user = users[chatId];
 
-        /* ===== REFERRAL SYSTEM ===== */
         if (user.tempRef && !user.referredBy) {
             const referrerId = user.tempRef;
 
@@ -168,17 +168,14 @@ bot.on("callback_query", async(query)=>{
                 users[referrerId].invited.push(chatId);
 
                 bot.sendMessage(referrerId,
-`🎉 New Referral Joined using your link!
-📊 Your Referral Progress: ${users[referrerId].refProgress}/4
-Invite more friends to unlock rewards faster. 🎁`
-                );
+`🎉 New Referral Joined!
+📊 Progress: ${users[referrerId].refProgress}/4`);
             }
 
             user.tempRef = null;
             saveUsers();
         }
 
-        /* ===== GIVE ACCESS ===== */
         bot.sendMessage(chatId, `✅ Access Granted!`, {
             reply_markup: {
                 keyboard: [
@@ -190,7 +187,6 @@ Invite more friends to unlock rewards faster. 🎁`
             }
         });
 
-        /* ===== REMOVE INLINE BUTTON ===== */
         bot.editMessageReplyMarkup(
             { inline_keyboard: [] },
             { chat_id: chatId, message_id: query.message.message_id }
@@ -199,57 +195,44 @@ Invite more friends to unlock rewards faster. 🎁`
         return;
     }
 
-    /* ================= HELP CLAIM ================= */
-    else if (data === "help_claim") {
-
+    /* ================= HELP ================= */
+    if (data === "help_claim") {
         bot.sendPhoto(chatId, __dirname + "/claim.jpg", {
-            caption:
-`🎁 <b>How to Claim Reward</b>
-
-1️⃣ Invite 4 friends using your referral link and get ID and code
-
-2️⃣ If you don’t want referrals, you can purchase it
-`,
+            caption: "🎁 How to claim reward...",
             parse_mode: "HTML"
         });
-
         return;
     }
 
-    /* 👉 ADD ALL OTHER data CONDITIONS BELOW LIKE THIS */
+    /* ================= STOCK ================= */
+    if (data === "stock_hotya") {
+        bot.sendMessage(adminId, "🔥 Hotya Stock Control", {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text:"✅ Available", callback_data:"hotya_available"},
+                        { text:"❌ Over", callback_data:"hotya_over"}
+                    ]
+                ]
+            }
+        });
+        return;
+    }
 
-});
-    /* STOCK HOTYA MENU */
-if(data === "stock_hotya"){
-bot.sendMessage(adminId,
-`🔥 Hotya Stock Control`,
-{
-reply_markup:{
-inline_keyboard:[
-[
-{ text:"✅ Available", callback_data:"hotya_available"},
-{ text:"❌ Over", callback_data:"hotya_over"}
-]
-]
-}
-});
-}
+    if (data === "hotya_available") {
+        stock.Hotya = "available";
+        bot.sendMessage(adminId,"✅ Hotya Available");
+        return;
+    }
 
-/* STOCK GOSH MENU */
-if(data === "stock_gosh"){
-bot.sendMessage(adminId,
-`⚡ GOSH Stock Control`,
-{
-reply_markup:{
-inline_keyboard:[
-[
-{ text:"✅ Available", callback_data:"gosh_available"},
-{ text:"❌ Over", callback_data:"gosh_over"}
-]
-]
-}
+    if (data === "hotya_over") {
+        stock.Hotya = "over";
+        bot.sendMessage(adminId,"❌ Hotya Over");
+        return;
+    }
+
+    /* 👉 continue ALL other conditions INSIDE this block */
 });
-}
 // user profile on purchase request 
     if(data.startsWith("checkuser_")){
 
