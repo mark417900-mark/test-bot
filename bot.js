@@ -513,6 +513,7 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
 
     if(data.startsWith("approve_")){
         users[userId].redeems += 1;
+        users[userId].redeemLimit -= 1;
 users[userId].redeemRequest = false;
 users[userId].refProgress = Math.max(0, users[userId].refProgress - 4);
 
