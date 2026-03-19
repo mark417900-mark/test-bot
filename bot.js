@@ -231,8 +231,7 @@ bot.on("callback_query", async (query) => {
         return;
     }
 
-    /* 👉 continue ALL other conditions INSIDE this block */
-});
+
 // user profile on purchase request 
     if(data.startsWith("checkuser_")){
 
