@@ -196,29 +196,6 @@ Invite more friends to unlock rewards faster.🎁`
 }
 
 
-    const user = users[chatId];
-    if(user.tempRef && !user.referredBy){
-
-        const referrerId = user.tempRef;
-
-        if(users[referrerId]){
-
-            user.referredBy = referrerId;
-
-            users[referrerId].ref += 1;
-            users[referrerId].refProgress += 1;
-            users[referrerId].invited.push(chatId);
-
-            bot.sendMessage(referrerId,
-                `🎉 New Referral Joined using your link!
-
-📊 Your Referral Progress:${users[referrerId].refProgress}/4
-
-Invite more friends to unlock rewards faster.🎁`
-            );
-
-        }
-
         user.tempRef = null;
 
         saveUsers();
@@ -278,18 +255,17 @@ bot.sendMessage(adminId,"❌ User not found.");
 return;
 }
 
-const u = users[userId];
-
+const user = users[userId];
 bot.sendMessage(adminId,
 `👤 USER PROFILE
 
 🆔 User ID: <code>${userId}</code>
-👥 Total Referrals: ${u.ref}
-📊 Reward Progress: ${u.refProgress}/4
+👥 Total Referrals: ${user.ref}
+📊 Reward Progress: ${user.refProgress}/4
 🛒 <b>Transactions :</b> ${user.transactionCount || 0}
 🎯 <b>Redeem Limit :</b> ${user.redeemLimit || 0}
-🎁 Redeems: ${u.redeems}
-👤 Referred By: ${u.referredBy ? `<code>${u.referredBy}</code>` : "None"}`,
+🎁 Redeems: ${user.redeems}
+👤 Referred By: ${user.referredBy ? `<code>${user.referredBy}</code>` : "None"}`,
 { parse_mode:"HTML" });
 
         }
@@ -477,45 +453,56 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
     });
             }
   /* ADMIN APPROVE/REJECT PURCHASE */
-if(data.startsWith("buyapprove_") || data.startsWith("buyreject_")){
+if (data.startsWith("buyapprove_") || data.startsWith("buyreject_")) {
     const userId = data.split("_")[1];
-    if(!ADMIN_IDS.includes(adminId)) return;
+    if (!ADMIN_IDS.includes(adminId)) return;
 
-  if(data.startsWith("buyapprove_")){
-    users[userId].buyRequest = false;
-    users[userId].waitingAdminMsg = true;
-    users[userId].adminTarget = userId;
+    if (data.startsWith("buyapprove_")) {
 
-    users[userId].transactionCount += 1;
-    users[userId].redeemLimit += 1;
+        users[userId].buyRequest = false;
+        users[userId].waitingAdminMsg = true;
+        users[userId].adminTarget = userId;
 
-    let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
-    if(eligibleBonus > users[userId].bonusUnlocked){
-        let newBonus = eligibleBonus - users[userId].bonusUnlocked;
-        users[userId].refProgress += (newBonus * 4);
-        users[userId].bonusUnlocked = eligibleBonus;
+        users[userId].totalQty += users[userId].buyQty;
+        users[userId].transactionCount += 1;
+        users[userId].redeemLimit += 1;
 
+        // ✅ SEND APPROVAL MESSAGE FIRST
         bot.sendMessage(userId,
-                        `✅ Payment Verified!
-Your purchase has been approved.🥳
-Admin will send your code soon..🎁`
+`✅ Payment Verified!
+Your purchase has been approved. 🥳
+Admin will send your code soon.. 🎁`
         );
-    }
-    bot.sendMessage(userId,
+
+        // ✅ BONUS CALCULATION
+        let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
+
+        if (eligibleBonus > users[userId].bonusUnlocked) {
+
+            let newBonus = eligibleBonus - users[userId].bonusUnlocked;
+
+            users[userId].refProgress += (newBonus * 4);
+            users[userId].bonusUnlocked = eligibleBonus;
+
+            // ✅ SEND BONUS MESSAGE ONLY IF ELIGIBLE
+            bot.sendMessage(userId,
 `🎁 BONUS UNLOCKED!
 🔥 You completed ${users[userId].transactionCount} transactions!
 🎉 You received +${newBonus * 4} referral progress
 🚀 You can now redeem reward!`
-    );
+            );
+        }
 
-    saveUsers();
+        saveUsers();
 
-    const u = users[userId];
-    bot.sendMessage(adminId,
-`📦 <b>Order Delevering to</b> ID:<code>${userId}</code>
-📦 <b>Code Type:</b> ${u.buyType}
-🔢 <b>Quantity:</b> ${u.buyQty}`,
-    { parse_mode: "HTML" });
+        const user = users[userId];
+
+        bot.sendMessage(adminId,
+`<b>Order Delivering to</b> ID:<code>${userId}</code>
+📦 <b>Code Type:</b> ${user.buyType}
+🔢 <b>Quantity:</b> ${user.buyQty}`,
+        { parse_mode: "HTML" });
+    }
 }
     } else {
         users[userId].buyRequest = false;
