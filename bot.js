@@ -144,70 +144,88 @@ bot.on("callback_query", async(query)=>{
     const adminId = query.from.id;
 
 /* JOIN CHECK */
-    if(data === "check_join") {
+    bot.on("callback_query", async (query) => {
+    const chatId = query.message.chat.id;
+    const data = query.data;
+    const adminId = query.from.id;
+
+    /* ================= JOIN CHECK ================= */
+    if (data === "check_join") {
         const joined = await checkMembership(chatId);
-        if(!joined){
-            bot.answerCallbackQuery(query.id, { 
-                text: "❌ Please join all channels first.", 
-                show_alert: true 
+
+        if (!joined) {
+            bot.answerCallbackQuery(query.id, {
+                text: "❌ Please join all channels first.",
+                show_alert: true
             });
             return;
         }
 
-    const user = users[chatId];
+        const user = users[chatId];
 
-    if(user.tempRef && !user.referredBy){
-        const referrerId = user.tempRef;
-        if(users[referrerId]){
-            user.referredBy = referrerId;
-            users[referrerId].ref += 1;
-            users[referrerId].refProgress += 1;
-            users[referrerId].invited.push(chatId);
+        /* ===== REFERRAL SYSTEM ===== */
+        if (user.tempRef && !user.referredBy) {
+            const referrerId = user.tempRef;
 
-            bot.sendMessage(referrerId,
-                `🎉 New Referral Joined using your link!
-📊 Your Referral Progress:${users[referrerId].refProgress}/4
-Invite more friends to unlock rewards faster.🎁`
-            );
+            if (users[referrerId]) {
+                user.referredBy = referrerId;
+
+                users[referrerId].ref += 1;
+                users[referrerId].refProgress += 1;
+                users[referrerId].invited.push(chatId);
+
+                bot.sendMessage(referrerId,
+`🎉 New Referral Joined using your link!
+📊 Your Referral Progress: ${users[referrerId].refProgress}/4
+Invite more friends to unlock rewards faster. 🎁`
+                );
+            }
+
+            user.tempRef = null;
+            saveUsers();
         }
-        user.tempRef = null;
-        saveUsers();
-           }
-    // Grant access only once
-    bot.sendMessage(chatId, `✅ Access Granted!`, {
-        reply_markup: {
-            keyboard: [
-                ["👤 Profile","👥 Refer"],
-                ["🎁 Redeem","Help ❓"],
-                ["🛒 Buy Code"]
-            ],
-            resize_keyboard: true
-        }
-    });
 
-    // Destroy inline buttons
-    bot.editMessageReplyMarkup(
-        { inline_keyboard: [] }, 
-        { chat_id: query.message.chat.id, message_id: query.message.message_id }
-    );
+        /* ===== GIVE ACCESS ===== */
+        bot.sendMessage(chatId, `✅ Access Granted!`, {
+            reply_markup: {
+                keyboard: [
+                    ["👤 Profile","👥 Refer"],
+                    ["🎁 Redeem","Help ❓"],
+                    ["🛒 Buy Code"]
+                ],
+                resize_keyboard: true
+            }
+        });
+
+        /* ===== REMOVE INLINE BUTTON ===== */
+        bot.editMessageReplyMarkup(
+            { inline_keyboard: [] },
+            { chat_id: chatId, message_id: query.message.message_id }
+        );
+
         return;
-}
-
     }
-if(data === "help_claim"){
 
-bot.sendPhoto(chatId,"claim.jpg",{
-caption:
+    /* ================= HELP CLAIM ================= */
+    else if (data === "help_claim") {
+
+        bot.sendPhoto(chatId, __dirname + "/claim.jpg", {
+            caption:
 `🎁 <b>How to Claim Reward</b>
 
-1️⃣ Invite 4 friends using your referral link and get id and code
+1️⃣ Invite 4 friends using your referral link and get ID and code
 
-2️⃣ You if you dont want to referal you can purchase it
+2️⃣ If you don’t want referrals, you can purchase it
 `,
-parse_mode:"HTML"
-});
+            parse_mode: "HTML"
+        });
 
-            }
+        return;
+    }
+
+    /* 👉 ADD ALL OTHER data CONDITIONS BELOW LIKE THIS */
+
+});
     /* STOCK HOTYA MENU */
 if(data === "stock_hotya"){
 bot.sendMessage(adminId,
