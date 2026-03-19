@@ -32,7 +32,7 @@ let stock = {
 /* ================= ADMIN PANEL COMMAND ================= */
 bot.onText(/\/admin/, (msg) => {
     const chatId = msg.chat.id;
-
+  
     if(!ADMIN_IDS.includes(chatId)){
         bot.sendMessage(chatId, "❌ You are not an admin.");
         return;
@@ -142,9 +142,8 @@ bot.on("callback_query", async(query)=>{
     const chatId = query.message.chat.id;
     const data = query.data;
     const adminId = query.from.id;
-    /* JOIN CHECK */
+
 /* JOIN CHECK */
-// JOIN CHECK
     if(data === "check_join") {
         const joined = await checkMembership(chatId);
         if(!joined){
@@ -154,7 +153,6 @@ bot.on("callback_query", async(query)=>{
             });
             return;
         }
-
 
     const user = users[chatId];
 
@@ -172,8 +170,9 @@ bot.on("callback_query", async(query)=>{
 Invite more friends to unlock rewards faster.🎁`
             );
         }
-    }
-
+        user.tempRef = null;
+        saveUsers();
+           }
     // Grant access only once
     bot.sendMessage(chatId, `✅ Access Granted!`, {
         reply_markup: {
@@ -191,12 +190,9 @@ Invite more friends to unlock rewards faster.🎁`
         { inline_keyboard: [] }, 
         { chat_id: query.message.chat.id, message_id: query.message.message_id }
     );
+        return;
 }
 
-
-        user.tempRef = null;
-
-        saveUsers();
     }
 if(data === "help_claim"){
 
