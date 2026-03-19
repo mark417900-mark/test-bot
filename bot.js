@@ -745,7 +745,8 @@ if(text==="🎁 Redeem"){
 
     // 1️⃣ Check referral progress FIRST
     if(user.refProgress < REQUIRED_REFERRALS){
-
+        
+       const refLeft = 4 - user.refProgress;
         let progress = user.refProgress;
         let bar = "░░░░░░░░░░";
 
