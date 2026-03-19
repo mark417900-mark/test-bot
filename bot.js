@@ -455,8 +455,11 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
   /* ADMIN APPROVE/REJECT PURCHASE */
 if (data.startsWith("buyapprove_") || data.startsWith("buyreject_")) {
     const userId = data.split("_")[1];
-    if (!ADMIN_IDS.includes(adminId)) return;
 
+    if (!ADMIN_IDS.includes(adminId)) return;
+    if (!users[userId]) return;
+
+    // ================= APPROVE =================
     if (data.startsWith("buyapprove_")) {
 
         users[userId].buyRequest = false;
@@ -467,24 +470,22 @@ if (data.startsWith("buyapprove_") || data.startsWith("buyreject_")) {
         users[userId].transactionCount += 1;
         users[userId].redeemLimit += 1;
 
-        // ✅ SEND APPROVAL MESSAGE FIRST
+        // ✅ Approval message
         bot.sendMessage(userId,
 `✅ Payment Verified!
 Your purchase has been approved. 🥳
 Admin will send your code soon.. 🎁`
         );
 
-        // ✅ BONUS CALCULATION
+        // ✅ Bonus logic
         let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
 
         if (eligibleBonus > users[userId].bonusUnlocked) {
-
             let newBonus = eligibleBonus - users[userId].bonusUnlocked;
 
             users[userId].refProgress += (newBonus * 4);
             users[userId].bonusUnlocked = eligibleBonus;
 
-            // ✅ SEND BONUS MESSAGE ONLY IF ELIGIBLE
             bot.sendMessage(userId,
 `🎁 BONUS UNLOCKED!
 🔥 You completed ${users[userId].transactionCount} transactions!
@@ -503,20 +504,23 @@ Admin will send your code soon.. 🎁`
 🔢 <b>Quantity:</b> ${user.buyQty}`,
         { parse_mode: "HTML" });
     }
-}
-    } else {
+
+    // ================= REJECT =================
+    else if (data.startsWith("buyreject_")) {
+
         users[userId].buyRequest = false;
         saveUsers();
 
-        bot.sendMessage(userId,`❌ Payment Not Verified
+        bot.sendMessage(userId,
+`❌ Payment Not Verified
 
-Your purchase request was rejected.💔
+Your purchase request was rejected. 💔
 
 If you believe this is a mistake, contact support.`);
 
         bot.sendMessage(adminId,
 `❌ Purchase Rejected ID: <code>${userId}</code>`,
-        { parse_mode:"HTML" });
+        { parse_mode: "HTML" });
     }
 
     bot.deleteMessage(query.message.chat.id, query.message.message_id).catch(()=>{});
@@ -900,7 +904,7 @@ let now = Date.now();
 let activeUsers = Object.values(users).filter(u => 
     u.lastActive && (now - u.lastActive) <= 24 * 60 * 60 * 1000
 ).length;
-let totalTransactions = Object.values(users).reduce((sum,u)=>sum+u.purchases,0);
+let totalTransactions = Object.values(users).reduce((sum,u)=>sum+(u.transactionCount || 0),0);
 let totalQuantity = Object.values(users).reduce((sum,u)=>sum+(u.totalQty||0),0);
 let totalRedeems = Object.values(users).reduce((sum,u)=>sum+u.redeems,0);
 
