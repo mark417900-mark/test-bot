@@ -148,7 +148,6 @@ bot.on("callback_query", async(query)=>{
         const joined = await checkMembership(chatId);
 
         if (!joined) {
-            bot.answerCallbackQuery(query.id, {
                 text: "❌ Please join all channels first.",
                 show_alert: true
             });
