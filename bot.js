@@ -172,8 +172,6 @@ bot.on("callback_query", async(query)=>{
 Invite more friends to unlock rewards faster.🎁`
             );
         }
-        user.tempRef = null;
-        saveUsers();
     }
 
     // Grant access only once
@@ -311,7 +309,6 @@ ADMIN_IDS.forEach(admin=>{
 
 👥 Total Referrals: ${user.ref}
 📊 Progress: ${user.refProgress}/4
-🛒 Purchases: ${user.purchases}
 🎁 Redeems: ${user.redeems}`,
 {
 parse_mode:"HTML",
@@ -537,7 +534,7 @@ users[userId].redeemRequest = false;
 users[userId].refProgress = Math.max(0, users[userId].refProgress - 4);
 
 /* STRICT SYSTEM UPDATE */
-users[userId].lastRedeemPurchaseCount = users[userId].purchases;
+users[userId].lastRedeemPurchaseCount = users[userId].transactionCount;
 
 users[userId].waitingAdminMsg = true;
 users[userId].adminTarget = userId;
