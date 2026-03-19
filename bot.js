@@ -741,7 +741,7 @@ ${link}
 
 if(text==="🎁 Redeem"){
 
-    const REQUIRED_REFERRALS = 4; // ✅ FIXED
+    const REQUIRED_REFERRALS = 1; // ✅ FIXED
 
     // 1️⃣ Check referral progress FIRST
     if(user.refProgress < REQUIRED_REFERRALS){
