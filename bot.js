@@ -269,12 +269,6 @@ if(user.redeemRequest){
     return;
 }
 
-/* ELIGIBILITY 
-if(user.refProgress < 4){
-    bot.sendMessage(chatId,"❌ Not eligible.");
-    return;
-} */
-
 /* STOCK */
 const type = data === "redeem_hotya" ? "Hotya" : "GOSH";
 
@@ -666,11 +660,9 @@ inline_keyboard:[
         user.screenshot=fileId;
         user.orderStatus="Submitted";
         saveUsers();
-        bot.sendMessage(chatId,`✅ Payment Screenshot Received!
-
-Your order has been submitted for review.🥳
-
-⏳ Please wait while the admin verifies your payment.`,{
+        bot.sendMessage(chatId,`✅ Screenshot Received!
+⏳ Your payment is under verification.
+💡 Usually approved within a few minutes.Please wait… 🚀`,{
     reply_markup:{
         keyboard:[
             ["👤 Profile","👥 Refer"],
@@ -741,7 +733,7 @@ ${link}
 
 if(text==="🎁 Redeem"){
 
-    const REQUIRED_REFERRALS = 1; // ✅ FIXED
+    const REQUIRED_REFERRALS = 4; // ✅ FIXED
 
     // 1️⃣ Check referral progress FIRST
     if(user.refProgress < REQUIRED_REFERRALS){
@@ -768,7 +760,7 @@ ${bar} ${user.refProgress}/4
 Invite friends using your referral link.
 
 ⚡ <b>Option 2 (Faster)</b>
-Complete <b>5 successful purchases</b> and instantly get <b>+4 referral progress</b>
+Complete 5 purchase and instantly unlock reward 🚀
 
 🚀 Unlock redeem faster without waiting for friends.
 
