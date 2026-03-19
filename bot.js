@@ -740,11 +740,12 @@ ${link}
     }
 
 if(text==="🎁 Redeem"){
-    const REQUIRED_REFERRALS = 1; // Set your referral requirement
-    const refLeft = REQUIRED_REFERRALS - user.refProgress;
 
-    // 1️⃣ First check referral progress
+    const REQUIRED_REFERRALS = 4; // ✅ FIXED
+
+    // 1️⃣ Check referral progress FIRST
     if(user.refProgress < REQUIRED_REFERRALS){
+
         let progress = user.refProgress;
         let bar = "░░░░░░░░░░";
 
@@ -774,29 +775,29 @@ Complete <b>5 successful purchases</b> and instantly get <b>+4 referral progress
 💡 <i>Tip: Share your link in groups to get referrals quickly.</i>`,
         { parse_mode:"HTML" }
         );
-        return; // Stop further checks if referral progress is not enough
+
+        return; // 🚨 VERY IMPORTANT (stops further checks)
     }
 
-    // 2️⃣ Then check redeem limit
+    // 2️⃣ Now check redeem limit ONLY if above passed
     if(user.redeems >= user.redeemLimit){
         bot.sendMessage(chatId,
 `❌ <b>Redeem Limit Reached</b>
 
-🎯 Your Limit: ${user.redeemLimit}
-🎁 Used: ${user.redeems}
-
-💡 Complete more purchases to increase your redeem limit.`,
+🎯 Limit: ${user.redeemLimit}
+🎁 Used: ${user.redeems}`,
         {parse_mode:"HTML"});
         return;
     }
 
-    // 3️⃣ Prevent multiple requests
+    // 3️⃣ Prevent duplicate request
     if(user.redeemRequest){
-        bot.sendMessage(chatId,"⚠️ Redeem request already submitted.\n⏳ Please wait for admin approval.");
+        bot.sendMessage(chatId,
+"⚠️ Redeem request already submitted.\n⏳ Wait for admin.");
         return;
     }
 
-    // 4️⃣ Show redeem menu
+    // 4️⃣ Show redeem options
     user.redeemStep = "select_type";
     saveUsers();
 
@@ -814,7 +815,6 @@ Complete <b>5 successful purchases</b> and instantly get <b>+4 referral progress
         }
     });
 }
-
     if(text==="Help ❓"){
 
 bot.sendMessage(chatId,
