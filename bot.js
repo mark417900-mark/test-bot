@@ -84,6 +84,8 @@ function createUser(id){
             totalQty: 0,
             bonusGiven: 0,
             redeemHistory: [],
+            selfPurchases: 0,
+            selfRedeems: 0,
             redeemRequest:false,
             buyRequest:false,
             buyRefs:0,
@@ -456,28 +458,33 @@ if(referrer && users[referrer]){
 }
 
         bot.sendMessage(userId, `✅ Payment Verified!\n\nYour purchase has been approved. 🥳`);
-// downline purchase msg
+
+        // downline purchase msg
         if(referrer && users[referrer]){
     bot.sendMessage(referrer,
 `🎉 Your referral made a purchase!  ID: ${userId}`);
 }
-      // ✅ BONUS LOGIC (correct place)
-    let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
+  
+        // 🔥 TRACK SELF PURCHASES
+users[userId].selfPurchases += users[userId].buyQty;
 
-    if (eligibleBonus > users[userId].bonusUnlocked) {
-        let newBonus = eligibleBonus - users[userId].bonusUnlocked;
+// 🔥 CALCULATE SELF REDEEM
+const selfEligible = Math.floor(users[userId].selfPurchases / 5);
 
-        users[userId].refProgress += (newBonus * 4);
-        users[userId].bonusUnlocked = eligibleBonus;
+if(selfEligible > users[userId].selfRedeems){
+    let newRedeems = selfEligible - users[userId].selfRedeems;
 
-        bot.sendMessage(userId,
-`🎁 BONUS UNLOCKED!
+    users[userId].redeems += newRedeems; // 🎁 GIVE REDEEM
+    users[userId].selfRedeems = selfEligible;
 
-🔥 You completed ${users[userId].transactionCount} transactions!
+    bot.sendMessage(userId,
+`🎁 <b>SELF PURCHASED REWARD!</b>
 
-🎉 You received +${newBonus * 4} referral progress`
-        );
-    }
+🎉 You earned <b>${newRedeems}</b> FREE redeem(s)!
+
+💡 <i>Every 5 purchases = 1 redeem</i>`,
+    { parse_mode:"HTML" });
+}
 
     saveUsers();
 }
@@ -720,7 +727,7 @@ bot.sendMessage(chatId,
 🎁 Redeems: ${user.redeems}
 🛒 Purchases: ${user.transactionCount}
 
-👥 Referrals: ${user.ref}
+👥 Downline Users: ${user.ref}
 📦 Downline Purchases: ${user.downlinePurchases}
 
 💰 Total Qty Bought: ${user.totalQty}
@@ -743,54 +750,56 @@ ${link}
     }
 
 if(text==="🎁 Redeem"){
+
     // 📊 DOWNLINE LIST
-let downlineText = "No downline purchases yet.";
+    let downlineText = "No downline purchases yet.";
 
-if(user.downlineList && Object.keys(user.downlineList).length > 0){
+    if(user.downlineList && Object.keys(user.downlineList).length > 0){
+        downlineText = Object.entries(user.downlineList)
+            .map(([id, qty], index) => {
+                return `${index + 1}. <code>${id}</code> → ${qty} qty`;
+            })
+            .join("\n");
+    }
 
-    downlineText = Object.entries(user.downlineList)
-        .map(([id, qty], index) => {
-            return `${index + 1}. <code>${id}</code> → ${qty} qty`;
-        })
-        .join("\n");
-}
+    // 🔥 DOWNLINE SYSTEM
+    const totalDownline = user.downlinePurchases || 0;
+    const eligibleRedeems = Math.floor(totalDownline / 5);
+    const totalEligible =  Math.floor(user.downlinePurchases / 5) + Math.floor(user.selfPurchases / 5);
+    if(totalEligible <= user.redeems){
+        let remaining = 5 - (totalDownline % 5);
 
-bot.sendMessage(chatId,
-`📊 <b>DOWNLINE DETAILS</b>
-
-${downlineText}`,
-{ parse_mode:"HTML" });
-    // 🔥 NEW DOWNLINE BASED SYSTEM
-const totalDownline = user.downlinePurchases || 0;
-const eligibleRedeems = Math.floor(totalDownline / 5);
-
-if(eligibleRedeems <= user.redeems){
-
-    let remaining = 5 - (totalDownline % 5);
-
-    bot.sendMessage(chatId,
+        bot.sendMessage(chatId,
 `<b>REDEEM LOCKED</b> 🔒
 
+🎁 <b>Your Total Redeems:</b> ${user.redeems}
 📦 <b>Downline Purchases:</b> ${totalDownline}/5
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎁 <b>EARNING SYSTEM</b>
+• Every <b>5 referral purchases</b> = 1 redeem  
+• Every <b>5 self purchases</b> = 1 redeem  
 
-❌ You need <b>${remaining} more purchases</b> from your referrals.
+💡 <b>HOW TO UNLOCK FASTER:</b>
+👥 Invite active users who will purchase  
+🛒 Or buy yourself to unlock instantly ⚡
 
-━━━━━━━━━━━━━━━━━━━━
-👥 Invite active users who will purchase.
+📊 <b>DOWNLINE DETAILS</b>
+${downlineText}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 <b>Pro Tip:</b>
+Top users don’t wait… they <b>take action</b> and unlock rewards faster 💰`,
+{ parse_mode:"HTML" });
 
-💡 <i>1 Redeem = Every 5 downline purchases</i>`,
-    { parse_mode:"HTML" });
+        return;
+    }
 
-    return;
-}
-    // 3️⃣ Prevent duplicate request
+    // ✅ If unlocked
     if(user.redeemRequest){
         bot.sendMessage(chatId,
 "⚠️ Redeem request already submitted.\n⏳ Wait for admin approval.");
         return;
     }
 
-    // 4️⃣ Show redeem options
     user.redeemStep = "select_type";
     saveUsers();
 
