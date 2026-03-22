@@ -91,7 +91,8 @@ function createUser(id){
             waitingAdminMsg:false,
             invited:[],
             referredBy:null,
-            orderStatus:null
+            orderStatus:null,
+            warnings: 0
         };
         saveUsers();
     }
@@ -168,8 +169,8 @@ bot.on("callback_query", async (query) => {
                 users[referrerId].invited.push(chatId);
 
                 bot.sendMessage(referrerId,
-`🎉 New Referral Joined!
-📊 Progress: ${users[referrerId].refProgress}/4`);
+`🎉 New Referral Joined using your referral Link ! 
+📊Now Your Referal Progress: ${users[referrerId].refProgress}/4`);
             }
 
             user.tempRef = null;
@@ -219,43 +220,43 @@ bot.on("callback_query", async (query) => {
         return;
     }
 
-    if (data === "hotya_available") {
-        stock.Hotya = "available";
-        bot.sendMessage(adminId,"✅ Hotya Available");
+    if (data === "stock_gosh") {
+    bot.sendMessage(adminId, "⚡ GOSH Stock Control", {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: "✅ Available", callback_data: "gosh_available" },
+                    { text: "❌ Over", callback_data: "gosh_over" }
+                ]
+            ]
+        }
+    });
+    return;
+}
+        // stock controler
+    if(data === "hotya_available"){
+stock.Hotya = "available";
+bot.sendMessage(adminId,"✅ Hotya Stock set to AVAILABLE");
         return;
-    }
-
-    if (data === "hotya_over") {
-        stock.Hotya = "over";
-        bot.sendMessage(adminId,"❌ Hotya Over");
-        return;
-    }
-
-
-// user profile on purchase request 
-    if(data.startsWith("checkuser_")){
-
-const userId = data.split("_")[1];
-
-if(!users[userId]){
-bot.sendMessage(adminId,"❌ User not found.");
-return;
 }
 
-const user = users[userId];
-bot.sendMessage(adminId,
-`👤 USER PROFILE
+if(data === "hotya_over"){
+stock.Hotya = "over";
+bot.sendMessage(adminId,"❌ Hotya Stock set to OVER");
+    return;
+}
 
-🆔 User ID: <code>${userId}</code>
-👥 Total Referrals: ${user.ref}
-📊 Reward Progress: ${user.refProgress}/4
-🛒 <b>Transactions :</b> ${user.transactionCount || 0}
-🎯 <b>Redeem Limit :</b> ${user.redeemLimit || 0}
-🎁 Redeems: ${user.redeems}
-👤 Referred By: ${user.referredBy ? `<code>${user.referredBy}</code>` : "None"}`,
-{ parse_mode:"HTML" });
+if(data === "gosh_available"){
+stock.GOSH = "available";
+bot.sendMessage(adminId,"✅ GOSH Stock set to AVAILABLE");
+    return;
+}
 
-        }
+if(data === "gosh_over"){
+stock.GOSH = "over";
+bot.sendMessage(adminId,"❌ GOSH Stock set to OVER");
+    return;
+    }
 // redeem request controller
     if(data === "redeem_hotya" || data === "redeem_gosh"){
 
@@ -309,30 +310,11 @@ inline_keyboard:[
 /* USER MSG */
 bot.sendMessage(chatId,
 `✅ Redeem request sent!
-🎯 Selected Code: ${type}
+
 ⏳ Wait for admin approval.`);
 
 }
-    // stock controler
-    if(data === "hotya_available"){
-stock.Hotya = "available";
-bot.sendMessage(adminId,"✅ Hotya Stock set to AVAILABLE");
-}
 
-if(data === "hotya_over"){
-stock.Hotya = "over";
-bot.sendMessage(adminId,"❌ Hotya Stock set to OVER");
-}
-
-if(data === "gosh_available"){
-stock.GOSH = "available";
-bot.sendMessage(adminId,"✅ GOSH Stock set to AVAILABLE");
-}
-
-if(data === "gosh_over"){
-stock.GOSH = "over";
-bot.sendMessage(adminId,"❌ GOSH Stock set to OVER");
-    }
     /* ================= BUY FLOW ================= */
     const QR_CODES = {
         Hotya: "paymentQR.jpg",
@@ -408,7 +390,6 @@ if(qty === 10) price = 100;
 
     user.buyQty = qty;
     user.buyPrice = price;
-    user.buyRequest = true;
     user.buyStep = "payment";
 
     saveUsers();
@@ -432,17 +413,27 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
         }
     });
             }
-  /* ADMIN APPROVE/REJECT PURCHASE */
-if (data.startsWith("buyapprove_") || data.startsWith("buyreject_")) {
+ 
+
+ /* ADMIN APPROVE/REJECT PURCHASE */
+ if (
+  data.startsWith("buyapprove_") || 
+  data.startsWith("buyreject_") || 
+  data.startsWith("buywarn_")
+) {
     const userId = data.split("_")[1];
 
     if (!ADMIN_IDS.includes(adminId)) return;
     if (!users[userId]) return;
 
-    // ================= APPROVE =================
+    // ✅ APPROVE
     if (data.startsWith("buyapprove_")) {
 
         users[userId].buyRequest = false;
+        users[userId].buyStep = null;
+        users[userId].buyType = null;
+        users[userId].screenshot = null;
+        users[userId].orderStatus = null;
         users[userId].waitingAdminMsg = true;
         users[userId].adminTarget = userId;
 
@@ -450,56 +441,62 @@ if (data.startsWith("buyapprove_") || data.startsWith("buyreject_")) {
         users[userId].transactionCount += 1;
         users[userId].redeemLimit += 1;
 
-        // ✅ Approval message
+        bot.sendMessage(userId, `✅ Payment Verified!\n\nYour purchase has been approved. 🥳`);
+
+      // ✅ BONUS LOGIC (correct place)
+    let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
+
+    if (eligibleBonus > users[userId].bonusUnlocked) {
+        let newBonus = eligibleBonus - users[userId].bonusUnlocked;
+
+        users[userId].refProgress += (newBonus * 4);
+        users[userId].bonusUnlocked = eligibleBonus;
+
         bot.sendMessage(userId,
-`✅ Payment Verified!
-Your purchase has been approved. 🥳
-Admin will send your code soon.. 🎁`
-        );
-
-        // ✅ Bonus logic
-        let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
-
-        if (eligibleBonus > users[userId].bonusUnlocked) {
-            let newBonus = eligibleBonus - users[userId].bonusUnlocked;
-
-            users[userId].refProgress += (newBonus * 4);
-            users[userId].bonusUnlocked = eligibleBonus;
-
-            bot.sendMessage(userId,
 `🎁 BONUS UNLOCKED!
+
 🔥 You completed ${users[userId].transactionCount} transactions!
-🎉 You received +${newBonus * 4} referral progress
-🚀 You can now redeem reward!`
-            );
-        }
 
-        saveUsers();
-
-        const user = users[userId];
-
-        bot.sendMessage(adminId,
-`<b>Order Delivering to</b> ID:<code>${userId}</code>
-📦 <b>Code Type:</b> ${user.buyType}
-🔢 <b>Quantity:</b> ${user.buyQty}`,
-        { parse_mode: "HTML" });
+🎉 You received +${newBonus * 4} referral progress`
+        );
     }
 
-    // ================= REJECT =================
+    saveUsers();
+}
+
+    // ❌ REJECT
     else if (data.startsWith("buyreject_")) {
 
         users[userId].buyRequest = false;
+        users[userId].buyStep = null;
+        users[userId].buyType = null;
+        users[userId].screenshot = null;
+        users[userId].orderStatus = null;
+
         saveUsers();
 
         bot.sendMessage(userId,
 `❌ Payment Not Verified
+Your purchase request was rejected.`);
+    }
 
-Your purchase request was rejected. 💔
+    // ⚠️ WARN + CANCEL
+    else if (data.startsWith("buywarn_")) {
 
-If you believe this is a mistake, contact support.`);
+        users[userId].buyRequest = false;
+        users[userId].warnings += 1;
+        users[userId].buyStep = null;
+        users[userId].buyType = null;
+        users[userId].screenshot = null;
+        users[userId].orderStatus = null;
 
-        bot.sendMessage(adminId,
-`❌ Purchase Rejected ID: <code>${userId}</code>`,
+        saveUsers();
+
+        bot.sendMessage(userId,
+`⚠️ <b>Order Cancelled & Warning Issed</b>
+
+🚫 Reason:
+Fake / Invalid Payment Screenshot.`,
         { parse_mode: "HTML" });
     }
 
@@ -525,15 +522,12 @@ users[userId].adminTarget = userId;
 saveUsers();
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
-
-Your reward is being sent by the admin.`);
+Your reward is being sent by the admin soon...`);
         const u = users[userId];
         bot.sendMessage(adminId,
 `✅ Redeem Approved
-🆔 User: <code>${userId}</code>
 🎯 Type: ${u.redeemType}
-
-Send reward now.`,
+Send redeem reward to ID: <code>${userId}</code>`,
 {parse_mode:"HTML"});
     } else {
     users[userId].redeemRequest = false;
@@ -562,7 +556,7 @@ bot.on("message", async(msg)=>{
 
     if(text.startsWith("/")) return;
     /* ================= PURCHASE CANCEL ================= */
-    if(text === "❌ Cancel" && user.buyRequest){
+    if(text === "❌ Cancel" && (user.buyRequest || user.buyStep)){
     user.buyRequest = false;
     user.buyType = null;
     user.buyStep = null;
@@ -584,8 +578,7 @@ bot.on("message", async(msg)=>{
     return;
 }
     /* ================= ADMIN SEND REWARD ================= */
-    if(ADMIN_IDS.includes(chatId)){
-  const pendingUser = Object.keys(users).find(
+   const pendingUser = Object.keys(users).find(
   id => users[id].waitingAdminMsg === true
 );
 
@@ -632,7 +625,6 @@ users[pendingUser].adminTarget = null;
         });
 
         return;
-    }
 }
 /* STOCK MANAGER */
 if(text === "📦 Stock Manager"){
@@ -656,14 +648,15 @@ inline_keyboard:[
 
                 }
     /* ================= RECEIVE SCREENSHOT ================= */
-    if(msg.photo && user.buyRequest){
+   if(msg.photo && user.buyStep === "payment"){
         const fileId = msg.photo[msg.photo.length-1].file_id;
         user.screenshot=fileId;
         user.orderStatus="Submitted";
+        user.buyRequest = true;
         saveUsers();
         bot.sendMessage(chatId,`✅ Screenshot Received!
-⏳ Your payment is under verification.
-💡 Usually approved within a few minutes.Please wait… 🚀`,{
+        
+⏳ Your payment is under verification.`,{
     reply_markup:{
         keyboard:[
             ["👤 Profile","👥 Refer"],
@@ -681,16 +674,16 @@ inline_keyboard:[
                 Quantity: ${user.buyQty}
                 Price: ₹${user.buyPrice}`, parse_mode:"HTML" ,
                 reply_markup:{
-                    inline_keyboard:[
+    inline_keyboard:[
 [
 { text:"✅ Approve", callback_data:`buyapprove_${chatId}`},
 { text:"❌ Reject", callback_data:`buyreject_${chatId}`}
 ],
 [
-{ text:"👤 Check Profile", callback_data:`checkuser_${chatId}`}
+{ text:"⚠️ Warn + Cancel", callback_data:`buywarn_${chatId}`}
 ]
 ]
-                }
+}
             });
         });
     }
@@ -713,10 +706,9 @@ bot.sendMessage(chatId,
 
 🎁 <b>Redeems :</b> ${user.redeems}
 👥 <b>Total Referrals :</b> ${user.ref}
-🛒 <b>Transactions :</b> ${user.transactionCount || 0}
-🎯 <b>Redeem Limit :</b> ${user.redeemLimit || 0}
+🛒 <b>Purchased:</b> ${user.transactionCount || 0}
 
-📊 <b>Reward Progress</b>
+📊 <b>Referral Progress</b>
 ${bar} ${progress}/4
 `,
 {parse_mode:"HTML"});
@@ -724,11 +716,14 @@ ${bar} ${progress}/4
 }
     if(text==="👥 Refer"){
         const link=`https://t.me/${botUsername}?start=${chatId}`;
-        bot.sendMessage(chatId,`Invite Friends & Earn Rewards 🥳!
+        bot.sendMessage(chatId,`
+Invite your friends using your referral link 👇
 
-🎁 Your referral Link 
+🔗 Your Link:
 ${link}
 
+💡 For every successful referral, your progress increases.
+🚀 Reach 4 referrals to unlock rewards!
 `);
     }
 
@@ -761,9 +756,7 @@ ${bar} ${user.refProgress}/4
 Invite friends using your referral link.
 
 ⚡ <b>Option 2 (Faster)</b>
-Complete 5 purchase and instantly unlock reward 🚀
-
-🚀 Unlock redeem faster without waiting for friends.
+Complete 5 purchase and get +4 referral progress instantly🚀
 
 ━━━━━━━━━━━━━━━━━━━━━
 💡 <i>Tip: Share your link in groups to get referrals quickly.</i>`,
@@ -777,9 +770,8 @@ Complete 5 purchase and instantly unlock reward 🚀
     if(user.redeems >= user.redeemLimit){
         bot.sendMessage(chatId,
 `❌ <b>Redeem Limit Reached</b>
-
-🎯 Limit: ${user.redeemLimit}
-🎁 Used: ${user.redeems}`,
+ You need to purchase atleat one order to increase your limit
+🎁Previous Used Limits: ${user.redeems}`,
         {parse_mode:"HTML"});
         return;
     }
@@ -787,7 +779,7 @@ Complete 5 purchase and instantly unlock reward 🚀
     // 3️⃣ Prevent duplicate request
     if(user.redeemRequest){
         bot.sendMessage(chatId,
-"⚠️ Redeem request already submitted.\n⏳ Wait for admin.");
+"⚠️ Redeem request already submitted.\n⏳ Wait for admin approval.");
         return;
     }
 
@@ -830,18 +822,33 @@ inline_keyboard:[
 
 }
 
-    if(text === "🛒 Buy Code"){
-        if(user.buyRequest){
-    bot.sendMessage(chatId,
+ if(text === "🛒 Buy Code"){
+
+    // 🔴 Already submitted (real pending)
+    if(user.buyRequest){
+        bot.sendMessage(chatId,
 `⚠️ <b>Pending Order Detected</b>
 
-⏳ You already have a purchase request under review.
+⏳ Your payment is under verification.
 
-📸 Please wait for admin approval or rejection before placing a new order.`,
-{ parse_mode:"HTML" });
+📸 Please wait for admin approval or rejection.`,
+        { parse_mode:"HTML" });
+        return;
+    }
 
-    return;
-}
+    // 🟡 In progress (not paid yet)
+    if(user.buyStep){
+        bot.sendMessage(chatId,
+`⚠️ <b>Order In Progress</b>
+
+💳 You have not completed payment yet.
+
+📸 Please send payment screenshot or press ❌ Cancel.`,
+        { parse_mode:"HTML" });
+        return;
+    }
+
+    // 🟢 Fresh order
     bot.sendMessage(chatId,"Select which Code you wants to buy.",{
         reply_markup:{
             inline_keyboard:[
@@ -981,17 +988,20 @@ return;
     } catch (e) {
         console.log("Could not fetch username for", id);
     }
-           bot.sendMessage(chatId,
+          bot.sendMessage(chatId,
 `👤 <b>USER PROFILE</b>
 
 🆔 User ID: <code>${id}</code>
 👤 Username: ${username}
+
 👥 Total Referrals: ${u.ref}
 📊 Referral Progress: ${u.refProgress}/4
+
 🎁 Redeems: ${u.redeems}/${u.redeemLimit || 0}
 🛒 Total Purchases: ${u.transactionCount || 0}
-📦 Total Quantity Bought: ${u.totalQty || 0}
-💰 Last Purchase Price: ₹${u.buyPrice || 0}
+📦 Quantity Purchased: ${u.totalQty || 0}
+
+⚠️ <b>Warnings:</b> ${u.warnings || 0}
 👤 Referred By: <code>${u.referredBy || "None"}</code>`,
 { parse_mode: "HTML",
 reply_markup:{
