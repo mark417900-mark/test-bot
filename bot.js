@@ -83,6 +83,7 @@ function createUser(id){
             redeemStep: null,
             totalQty: 0,
             bonusGiven: 0,
+            redeemHistory: [],
             redeemRequest:false,
             buyRequest:false,
             buyRefs:0,
@@ -447,22 +448,19 @@ const referrer = users[userId].referredBy;
 if(referrer && users[referrer]){
     users[referrer].downlinePurchases += users[userId].buyQty;
 
-    // store per user data
     if(!users[referrer].downlineList[userId]){
         users[referrer].downlineList[userId] = 0;
     }
 
     users[referrer].downlineList[userId] += users[userId].buyQty;
 }
-        // 🔥 ADD DOWNLINE PURCHASE TO REFERRER
-const referrer = users[userId].referredBy;
-
-if(referrer && users[referrer]){
-    users[referrer].downlinePurchases += users[userId].buyQty;
-}
 
         bot.sendMessage(userId, `✅ Payment Verified!\n\nYour purchase has been approved. 🥳`);
-
+// downline purchase msg
+        if(referrer && users[referrer]){
+    bot.sendMessage(referrer,
+`🎉 Your referral made a purchase!  ID: ${userId}`);
+}
       // ✅ BONUS LOGIC (correct place)
     let eligibleBonus = Math.floor(users[userId].transactionCount / 5);
 
@@ -530,8 +528,12 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
 
     if(data.startsWith("approve_")){
         users[userId].redeems += 1;
+users[userId].downlinePurchases -= 5; // 
 users[userId].redeemRequest = false;
-
+users[userId].redeemHistory.push({
+    type: users[userId].redeemType,
+    date: new Date().toLocaleString()
+});
 
 /* STRICT SYSTEM UPDATE */
 users[userId].lastRedeemPurchaseCount = users[userId].transactionCount;
@@ -711,14 +713,18 @@ inline_keyboard:[
     if(text==="👤 Profile"){
 
 bot.sendMessage(chatId,
-`      👤 <b>Your Profile</b>
- <b>User ID:</b> <code>${chatId}</code>
+`👤 <b>Your Profile</b>
 
-🎁 <b>Redeems :</b> ${user.redeems}
-👥 <b>Total Referrals :</b> ${user.ref}
-🛒 <b>My Purchase:</b> ${user.transactionCount || 0}
+🆔 ID: <code>${chatId}</code>
 
-👥 <b>Downline Purchases:</b> ${user.downlinePurchases || 0}
+🎁 Redeems: ${user.redeems}
+🛒 Purchases: ${user.transactionCount}
+
+👥 Referrals: ${user.ref}
+📦 Downline Purchases: ${user.downlinePurchases}
+
+💰 Total Qty Bought: ${user.totalQty}
+⚠️ Warnings: ${user.warnings}
 `,
 {parse_mode:"HTML"});
 
