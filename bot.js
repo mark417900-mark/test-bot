@@ -138,9 +138,6 @@ saveUsers();
         [{ text:" Joined ✅", callback_data:"check_join"}]
     ];
 
-    bot.sendMessage(chatId,"To use this bot, please join our official channels first 🥳.",{
-        reply_markup:{inline_keyboard:buttons}
-    });
 });
 
 /* CALLBACK HANDLER */
@@ -155,7 +152,7 @@ bot.on("callback_query", async (query) => {
 
         if (!joined) {
             bot.answerCallbackQuery(query.id, {
-                text: "❌ Please join all channels first.",
+                text: "❌ Please join all sources first.",
                 show_alert: true
             });
             return;
@@ -174,8 +171,7 @@ bot.on("callback_query", async (query) => {
                 users[referrerId].invited.push(chatId);
 
                 bot.sendMessage(referrerId,
-`🎉 New Referral Joined using your referral Link ! 
-📊Now Your Referal Progress: ${users[referrerId].refProgress}/4`);
+`🎉 New Referral Joined using your referral Link ! `);
             }
 
             user.tempRef = null;
@@ -402,7 +398,7 @@ if(qty === 10) price = 100;
     const qr = QR_CODES[user.buyType];
 
     bot.sendPhoto(chatId, qr,{
-        caption:
+caption:
 `🛒 <b>Order Summary</b>
 
 📦 Code Type: ${user.buyType}
@@ -421,10 +417,11 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
  
 
  /* ADMIN APPROVE/REJECT PURCHASE */
- if (
+if (
   data.startsWith("buyapprove_") || 
   data.startsWith("buyreject_") || 
-  data.startsWith("buywarn_")
+  data.startsWith("buywarn_") ||
+  data.startsWith("buydelivered_")
 ) {
     const userId = data.split("_")[1];
 
@@ -482,7 +479,7 @@ if(selfEligible > users[userId].selfRedeems){
 
 🎉 You earned <b>${newRedeems}</b> FREE redeem(s)!
 
-💡 <i>Every 5 purchases = 1 redeem</i>`,
+💡 <i>5 Codes purchases = 1 redeem</i>`,
     { parse_mode:"HTML" });
 }
 
@@ -504,8 +501,26 @@ if(selfEligible > users[userId].selfRedeems){
 `❌ Payment Not Verified
 Your purchase request was rejected.`);
     }
+ 
+        // 📦 DELIVERED
+else if (data.startsWith("buydelivered_")) {
 
-    // ⚠️ WARN + CANCEL
+    users[userId].buyRequest = false;
+    users[userId].buyStep = null;
+    users[userId].buyType = null;
+    users[userId].screenshot = null;
+    users[userId].orderStatus = null;
+
+    saveUsers();
+
+    bot.sendMessage(userId,
+`⚠️Order has already been delivered.
+
+🚫 Do not submit again.`,
+    { parse_mode:"HTML" });
+}
+
+    // ⚠️ WARN 
     else if (data.startsWith("buywarn_")) {
 
         users[userId].buyRequest = false;
@@ -535,7 +550,7 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
 
     if(data.startsWith("approve_")){
         users[userId].redeems += 1;
-users[userId].downlinePurchases -= 5; // 
+users[userId].downlinePurchases -= 8; // 
 users[userId].redeemRequest = false;
 users[userId].redeemHistory.push({
     type: users[userId].redeemType,
@@ -618,18 +633,6 @@ bot.on("message", async(msg)=>{
             bot.sendPhoto(pendingUser,fileId,{caption:text});
         }
 
-        /* VIDEO */
-        else if(msg.video){
-            const fileId = msg.video.file_id;
-            bot.sendVideo(pendingUser,fileId,{caption:text});
-        }
-
-        /* DOCUMENT */
-        else if(msg.document){
-            const fileId = msg.document.file_id;
-            bot.sendDocument(pendingUser,fileId,{caption:text});
-        }
-
         /* TEXT */
         else{
             bot.sendMessage(pendingUser,text);
@@ -640,7 +643,7 @@ users[pendingUser].adminTarget = null;
         saveUsers();
 
         bot.sendMessage(chatId,
-`✅ Reward sent successfully to ID: <code>${pendingUser}</code>`,
+`✅ CODE sent successfully to ID: <code>${pendingUser}</code>`,
 {parse_mode:"HTML",
             reply_markup:{
                 keyboard:[
@@ -708,7 +711,8 @@ inline_keyboard:[
 { text:"❌ Reject", callback_data:`buyreject_${chatId}`}
 ],
 [
-{ text:"⚠️ Warn + Cancel", callback_data:`buywarn_${chatId}`}
+{ text:"⚠️ Warn ", callback_data:`buywarn_${chatId}`},
+{ text:"📦 Delivered", callback_data:`buydelivered_${chatId}`}
 ]
 ]
 }
@@ -745,7 +749,6 @@ Invite your friends using your referral link 👇
 ${link}
 
 💡 For every successful referral, your progress increases.
-🚀 Reach 4 referrals to unlock rewards!
 `);
     }
 
@@ -764,10 +767,10 @@ if(text==="🎁 Redeem"){
 
     // 🔥 DOWNLINE SYSTEM
     const totalDownline = user.downlinePurchases || 0;
-    const eligibleRedeems = Math.floor(totalDownline / 5);
-    const totalEligible =  Math.floor(user.downlinePurchases / 5) + Math.floor(user.selfPurchases / 5);
+    const eligibleRedeems = Math.floor(totalDownline / 8);
+    const totalEligible =  Math.floor(user.downlinePurchases / 8) + Math.floor(user.selfPurchases / 5);
     if(totalEligible <= user.redeems){
-        let remaining = 5 - (totalDownline % 5);
+        let remaining = 8 - (totalDownline % 8);
 
         bot.sendMessage(chatId,
 `<b>REDEEM LOCKED</b> 🔒
@@ -776,8 +779,8 @@ if(text==="🎁 Redeem"){
 📦 <b>Downline Purchases:</b> ${totalDownline}/5
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎁 <b>EARNING SYSTEM</b>
-• Every <b>5 referral purchases</b> = 1 redeem  
-• Every <b>5 self purchases</b> = 1 redeem  
+👥 Your referrals buy 8 codes → you earn +1 redeem 🎁  
+🛒 You buy 5 codes → you instantly unlock +1 redeem ⚡  
 
 💡 <b>HOW TO UNLOCK FASTER:</b>
 👥 Invite active users who will purchase  
@@ -786,8 +789,7 @@ if(text==="🎁 Redeem"){
 📊 <b>DOWNLINE DETAILS</b>
 ${downlineText}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 <b>Pro Tip:</b>
-Top users don’t wait… they <b>take action</b> and unlock rewards faster 💰`,
+🚀 <b>Pro Tip:</b>Top users don’t wait… they <b>take action</b> and unlock rewards faster 💰`,
 { parse_mode:"HTML" });
 
         return;
