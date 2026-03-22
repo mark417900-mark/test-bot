@@ -139,6 +139,14 @@ saveUsers();
         [{ text:" Joined ✅", callback_data:"check_join"}]
     ];
 
+     bot.sendMessage(chatId,
+`👋 Join all channels first to use this bot ✅"`,
+{
+    reply_markup: {
+        inline_keyboard: buttons
+    }
+
+});
 });
 
 /* CALLBACK HANDLER */
