@@ -83,6 +83,8 @@ function createUser(id){
             redeemType: null,
             redeemStep: null,
             totalQty: 0,
+            totalRedeems: 0,
+            availableRedeems: 0,
             bonusGiven: 0,
             redeemHistory: [],
             selfPurchases: 0,
@@ -302,8 +304,8 @@ ADMIN_IDS.forEach(admin=>{
 🎯 Code Type: ${type}
 
 👥 Total Referrals: ${user.ref}
-📊 Progress: ${user.refProgress}/4
-🎁 Redeems: ${user.redeems}`,
+📊 Progress: ${user.refProgress}/8
+🏆 Total Redeemed: ${user.totalRedeems}`,
 {
 parse_mode:"HTML",
 reply_markup:{
@@ -481,7 +483,8 @@ const selfEligible = Math.floor(users[userId].selfPurchases / 5);
 if(selfEligible > users[userId].selfRedeems){
     let newRedeems = selfEligible - users[userId].selfRedeems;
 
-    users[userId].redeems += newRedeems; // 🎁 GIVE REDEEM
+    users[userId].totalRedeems += newRedeems;
+    users[userId].availableRedeems += newRedeems;
     users[userId].selfRedeems = selfEligible;
 
     bot.sendMessage(userId,
@@ -559,20 +562,15 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
     if(!ADMIN_IDS.includes(adminId) || !users[userId]) return;
 
     if(data.startsWith("approve_")){
-        users[userId].redeems += 1;
-users[userId].downlinePurchases = Math.max(0, users[userId].downlinePurchases - 8); // 
-users[userId].redeemRequest = false;
-users[userId].redeemHistory.push({
-    type: users[userId].redeemType,
-    date: new Date().toLocaleString()
-});
-
-/* STRICT SYSTEM UPDATE */
-users[userId].lastRedeemPurchaseCount = users[userId].transactionCount;
-
-users[userId].waitingAdminMsg = true;
-users[userId].adminTarget = userId;
-saveUsers();
+    users[userId].downlinePurchases = Math.max(0, users[userId].downlinePurchases - 8); // 
+    users[userId].redeemRequest = false;
+    users[userId].redeemHistory.push({type: users[userId].redeemType,date: new Date().toLocaleString() });
+    users[userId].availableRedeems -= 1;
+    users[userId].totalRedeems += 1;
+    users[userId].lastRedeemPurchaseCount = users[userId].transactionCount;
+    users[userId].waitingAdminMsg = true;
+    users[userId].adminTarget = userId;
+    saveUsers();
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
 Your reward is being sent by the admin soon...`);
@@ -735,16 +733,12 @@ inline_keyboard:[
 
 bot.sendMessage(chatId,
 `👤 <b>Your Profile</b>
-
 🆔 ID: <code>${chatId}</code>
 
 🎁 Redeems: ${user.redeems}
-🛒 Purchases: ${user.transactionCount}
-
+🛒 My Purchases: ${user.totalQty}
 👥 Downline Users: ${user.ref}
-📦 Downline Purchases: ${user.downlinePurchases}
 
-💰 Total Qty Bought: ${user.totalQty}
 ⚠️ Warnings: ${user.warnings}
 `,
 {parse_mode:"HTML"});
@@ -769,36 +763,35 @@ if(text==="🎁 Redeem"){
 
     if(user.downlineList && Object.keys(user.downlineList).length > 0){
         downlineText = Object.entries(user.downlineList)
-            .map(([id, qty], index) => {
-                return `${index + 1}. <code>${id}</code> → ${qty} qty`;
-            })
-            .join("\n");
+    .map(([id, qty]) => {
+        return `ID <code>${id}</code> → ${qty} CODE`;
+    })
+    .join("\n");
     }
-
     // 🔥 DOWNLINE SYSTEM
     const totalDownline = user.downlinePurchases || 0;
-    const eligibleRedeems = Math.floor(totalDownline / 8);
     const totalEligible =  Math.floor(user.downlinePurchases / 8) + Math.floor(user.selfPurchases / 5);
-    if(totalEligible <= user.redeems){
+    const usedRedeems = user.redeemHistory.length;
+    if(totalEligible <= usedRedeems){
         let remaining = 8 - (totalDownline % 8);
 
         bot.sendMessage(chatId,
 `<b>REDEEM LOCKED</b> 🔒
 
-🎁 <b>Your Total Redeems:</b> ${user.redeems}
-📦 <b>Required Downline Purchases:</b> ${totalDownline}/8
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎁 <b>My Previous Redeems:</b> ${user.redeems}
+📦 <b>Required code Purchases:</b> ${totalDownline}/8
+━━━━━━━━━━━━━━━━━━━
 🎁 <b>EARNING SYSTEM</b>
-👥 Your referrals buy 8 codes → you earn +1 redeem 🎁  
-🛒 You buy 5 codes → you instantly unlock +1 redeem ⚡  
+➊ Your referrals buy 8 codes → you earn +1 redeem   
+➋ You buy 5 codes → you instantly unlock +1 redeem 
 
 💡 <b>HOW TO UNLOCK FASTER:</b>
 👥 Invite active users who will purchase  
-🛒 Or buy yourself to unlock instantly ⚡
+🛒 Or buy yourself to unlock instantly 
 
-📊 <b>DOWNLINE DETAILS</b>
+📊 <b>DOWNLINE PURCHASE DETAILS</b>
 ${downlineText}
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━
 🚀 <b>Pro Tip:</b>Top users don’t wait… they <b>take action</b> and unlock rewards faster 💰`,
 { parse_mode:"HTML" });
 
