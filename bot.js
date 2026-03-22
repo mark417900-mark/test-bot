@@ -75,6 +75,7 @@ function createUser(id){
             buyQty:0,
             buyPrice:0,
             transactionCount: 0,
+            buyTime: null,
             bonusUnlocked: 0,
             redeemLimit: 1,
             lastActive: Date.now(),
@@ -392,11 +393,11 @@ if(qty === 10) price = 100;
     user.buyQty = qty;
     user.buyPrice = price;
     user.buyStep = "payment";
-
+    user.buyTime = Date.now(); // ⏱ start timer
     saveUsers();
 
     const qr = QR_CODES[user.buyType];
-
+    
     bot.sendPhoto(chatId, qr,{
 caption:
 `🛒 <b>Order Summary</b>
@@ -434,6 +435,7 @@ if (
         users[userId].buyRequest = false;
         users[userId].buyStep = null;
         users[userId].buyType = null;
+        users[userId].buyTime = null;
         users[userId].screenshot = null;
         users[userId].orderStatus = null;
         users[userId].waitingAdminMsg = true;
@@ -550,7 +552,7 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
 
     if(data.startsWith("approve_")){
         users[userId].redeems += 1;
-users[userId].downlinePurchases -= 8; // 
+users[userId].downlinePurchases = Math.max(0, users[userId].downlinePurchases - 8); // 
 users[userId].redeemRequest = false;
 users[userId].redeemHistory.push({
     type: users[userId].redeemType,
@@ -776,7 +778,7 @@ if(text==="🎁 Redeem"){
 `<b>REDEEM LOCKED</b> 🔒
 
 🎁 <b>Your Total Redeems:</b> ${user.redeems}
-📦 <b>Downline Purchases:</b> ${totalDownline}/5
+📦 <b>Required Downline Purchases:</b> ${totalDownline}/8
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎁 <b>EARNING SYSTEM</b>
 👥 Your referrals buy 8 codes → you earn +1 redeem 🎁  
@@ -842,6 +844,35 @@ inline_keyboard:[
 
  if(text === "🛒 Buy Code"){
 
+     const now = Date.now();
+
+if(user.buyStep && user.buyTime){
+    const diff = now - user.buyTime;
+
+    // 10 minutes timeout
+    if(diff > 10 * 60 * 1000){
+
+        // 🔄 RESET ORDER
+        user.buyRequest = false;
+        user.buyStep = null;
+        user.buyType = null;
+        user.buyQty = 0;
+        user.buyPrice = 0;
+        user.buyTime = null;
+        user.screenshot = null;
+        user.orderStatus = null;
+
+        saveUsers();
+
+        bot.sendMessage(chatId,
+`⌛ Your previous order expired after 10 minutes.
+
+🛒 Please create a new order.`,
+{ parse_mode:"HTML" });
+
+    }
+}
+
     // 🔴 Already submitted (real pending)
     if(user.buyRequest){
         bot.sendMessage(chatId,
@@ -885,6 +916,7 @@ inline_keyboard:[
         /* CANCEL BUTTON */
         if(text === "❌ Cancel"){
             adminState.mode = null;
+            user.buyTime = null;
             adminState.targetUser = null;
             bot.sendMessage(chatId,"Action Cancelled ❌",{
                 reply_markup:{
