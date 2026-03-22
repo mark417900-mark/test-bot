@@ -92,7 +92,9 @@ function createUser(id){
             invited:[],
             referredBy:null,
             orderStatus:null,
-            warnings: 0
+            warnings: 0,
+            downlinePurchases: 0,
+            downlineList: {}
         };
         saveUsers();
     }
@@ -439,7 +441,25 @@ After payment, send the payment screenshot here. & screenshot must contains UTR
 
         users[userId].totalQty += users[userId].buyQty;
         users[userId].transactionCount += 1;
-        users[userId].redeemLimit += 1;
+        // 🔥 TRACK DOWNLINE DETAILS
+const referrer = users[userId].referredBy;
+
+if(referrer && users[referrer]){
+    users[referrer].downlinePurchases += users[userId].buyQty;
+
+    // store per user data
+    if(!users[referrer].downlineList[userId]){
+        users[referrer].downlineList[userId] = 0;
+    }
+
+    users[referrer].downlineList[userId] += users[userId].buyQty;
+}
+        // 🔥 ADD DOWNLINE PURCHASE TO REFERRER
+const referrer = users[userId].referredBy;
+
+if(referrer && users[referrer]){
+    users[referrer].downlinePurchases += users[userId].buyQty;
+}
 
         bot.sendMessage(userId, `✅ Payment Verified!\n\nYour purchase has been approved. 🥳`);
 
@@ -510,9 +530,8 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
 
     if(data.startsWith("approve_")){
         users[userId].redeems += 1;
-        users[userId].redeemLimit -= 1;
 users[userId].redeemRequest = false;
-users[userId].refProgress = Math.max(0, users[userId].refProgress - 4);
+
 
 /* STRICT SYSTEM UPDATE */
 users[userId].lastRedeemPurchaseCount = users[userId].transactionCount;
@@ -691,25 +710,15 @@ inline_keyboard:[
     /* ================= USER COMMANDS ================= */
     if(text==="👤 Profile"){
 
-const progress = user.refProgress;
-
-let bar = "░░░░░░░░░░";
-
-if(progress==1) bar="██░░░░░░░░";
-if(progress==2) bar="████░░░░░░";
-if(progress==3) bar="██████░░░░";
-if(progress>=4) bar="██████████";
-
 bot.sendMessage(chatId,
 `      👤 <b>Your Profile</b>
  <b>User ID:</b> <code>${chatId}</code>
 
 🎁 <b>Redeems :</b> ${user.redeems}
 👥 <b>Total Referrals :</b> ${user.ref}
-🛒 <b>Purchased:</b> ${user.transactionCount || 0}
+🛒 <b>My Purchase:</b> ${user.transactionCount || 0}
 
-📊 <b>Referral Progress</b>
-${bar} ${progress}/4
+👥 <b>Downline Purchases:</b> ${user.downlinePurchases || 0}
 `,
 {parse_mode:"HTML"});
 
@@ -728,54 +737,46 @@ ${link}
     }
 
 if(text==="🎁 Redeem"){
+    // 📊 DOWNLINE LIST
+let downlineText = "No downline purchases yet.";
 
-    const REQUIRED_REFERRALS = 4; // ✅ FIXED
+if(user.downlineList && Object.keys(user.downlineList).length > 0){
 
-    // 1️⃣ Check referral progress FIRST
-    if(user.refProgress < REQUIRED_REFERRALS){
-        
-       const refLeft = 4 - user.refProgress;
-        let progress = user.refProgress;
-        let bar = "░░░░░░░░░░";
+    downlineText = Object.entries(user.downlineList)
+        .map(([id, qty], index) => {
+            return `${index + 1}. <code>${id}</code> → ${qty} qty`;
+        })
+        .join("\n");
+}
 
-        if(progress == 1) bar = "██░░░░░░░░";
-        if(progress == 2) bar = "████░░░░░░";
-        if(progress == 3) bar = "██████░░░░";
-        if(progress >= 4) bar = "██████████";
+bot.sendMessage(chatId,
+`📊 <b>DOWNLINE DETAILS</b>
 
-        bot.sendMessage(chatId,
+${downlineText}`,
+{ parse_mode:"HTML" });
+    // 🔥 NEW DOWNLINE BASED SYSTEM
+const totalDownline = user.downlinePurchases || 0;
+const eligibleRedeems = Math.floor(totalDownline / 5);
+
+if(eligibleRedeems <= user.redeems){
+
+    let remaining = 5 - (totalDownline % 5);
+
+    bot.sendMessage(chatId,
 `<b>REDEEM LOCKED</b> 🔒
 
-You need <b>${refLeft} more referrals</b> to unlock your reward.
+📦 <b>Downline Purchases:</b> ${totalDownline}/5
+
+❌ You need <b>${remaining} more purchases</b> from your referrals.
 
 ━━━━━━━━━━━━━━━━━━━━
-📊 <b>Referral Progress</b>
-${bar} ${user.refProgress}/4
+👥 Invite active users who will purchase.
 
-👥 <b>Option 1 (Free)</b>
-Invite friends using your referral link.
+💡 <i>1 Redeem = Every 5 downline purchases</i>`,
+    { parse_mode:"HTML" });
 
-⚡ <b>Option 2 (Faster)</b>
-Complete 5 purchase and get +4 referral progress instantly🚀
-
-━━━━━━━━━━━━━━━━━━━━━
-💡 <i>Tip: Share your link in groups to get referrals quickly.</i>`,
-        { parse_mode:"HTML" }
-        );
-
-        return; // 🚨 VERY IMPORTANT (stops further checks)
-    }
-
-    // 2️⃣ Now check redeem limit ONLY if above passed
-    if(user.redeems >= user.redeemLimit){
-        bot.sendMessage(chatId,
-`❌ <b>Redeem Limit Reached</b>
- You need to purchase atleat one order to increase your limit
-🎁Previous Used Limits: ${user.redeems}`,
-        {parse_mode:"HTML"});
-        return;
-    }
-
+    return;
+}
     // 3️⃣ Prevent duplicate request
     if(user.redeemRequest){
         bot.sendMessage(chatId,
@@ -995,11 +996,11 @@ return;
 👤 Username: ${username}
 
 👥 Total Referrals: ${u.ref}
-📊 Referral Progress: ${u.refProgress}/4
 
 🎁 Redeems: ${u.redeems}/${u.redeemLimit || 0}
-🛒 Total Purchases: ${u.transactionCount || 0}
+🛒 Total Transactions: ${u.transactionCount || 0}
 📦 Quantity Purchased: ${u.totalQty || 0}
+👥 <b>Downline Purchases:</b> ${user.downlinePurchases || 0}
 
 ⚠️ <b>Warnings:</b> ${u.warnings || 0}
 👤 Referred By: <code>${u.referredBy || "None"}</code>`,
