@@ -466,18 +466,11 @@ if (
     users[userId].orderStatus = null;
     users[userId].waitingAdminMsg = true;
     users[userId].adminTarget = userId;
-
     users[userId].totalQty += users[userId].buyQty;
     users[userId].transactionCount += 1;
-    users[userId].buyType = null;
-    users[userId].buyQty = 0;
-    users[userId].buyPrice = 0;
     const referrer = users[userId].referredBy;
-
-    if(referrer && users[referrer]){
-        users[referrer].downlinePurchases += users[userId].buyQty;
-
-        if(!users[referrer].downlineList[userId]){
+    if(referrer && users[referrer]){ users[referrer].downlinePurchases += users[userId].buyQty;
+    if(!users[referrer].downlineList[userId]){
             users[referrer].downlineList[userId] = 0;
         }
 
@@ -507,7 +500,9 @@ Send Purchase CODE to ID: <code>${userId}</code>`,
         users[userId].totalRedeems += newRedeems;
         users[userId].availableRedeems += newRedeems;
         users[userId].selfRedeems = selfEligible;
-
+        users[userId].buyType = null;
+        users[userId].buyQty = 0;
+        users[userId].buyPrice = 0;
         bot.sendMessage(userId,
 `🎁 <b>SELF PURCHASED REWARD!</b>
 🎉 You earned <b>${newRedeems}</b> FREE redeem(s)!
@@ -525,6 +520,8 @@ Send Purchase CODE to ID: <code>${userId}</code>`,
         users[userId].buyType = null;
         users[userId].screenshot = null;
         users[userId].orderStatus = null;
+        users[userId].buyQty = 0;
+        users[userId].buyPrice = 0;
 
         saveUsers();
 
@@ -540,7 +537,9 @@ else if (data.startsWith("buydelivered_")) {
     users[userId].buyStep = null;
     users[userId].screenshot = null;
     users[userId].orderStatus = null;
-
+    users[userId].buyType = null;
+    users[userId].buyQty = 0;
+    users[userId].buyPrice = 0;
     saveUsers();
 
     bot.sendMessage(userId,
@@ -557,6 +556,9 @@ else if (data.startsWith("buydelivered_")) {
         users[userId].buyStep = null;
         users[userId].screenshot = null;
         users[userId].orderStatus = null;
+        users[userId].buyType = null;
+        users[userId].buyQty = 0;
+        users[userId].buyPrice = 0;
 
         saveUsers();
 
