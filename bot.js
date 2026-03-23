@@ -20,7 +20,7 @@ const bot = new TelegramBot(token, { polling: true });
 const botUsername = "MARKS_ZONEBot";
 
 /* ADMIN */
-const ADMIN_IDS = [8521844327,8809115899];
+const ADMIN_IDS = [8521844327];
 
 /* CHANNELS */
 const channels = ["@earnwithmark41","@Marks_community"];
@@ -448,17 +448,19 @@ if (
   data.startsWith("buywarn_") ||
   data.startsWith("buydelivered_")
 ) {
-    const userId = data.split("_")[1];
-
+    const userId = Number(data.split("_")[1]);
+    
     if (!ADMIN_IDS.includes(adminId)) return;
     if (!users[userId]) return;
 
     // ✅ APPROVE
    if (data.startsWith("buyapprove_")) {
 
+    const type = users[userId].buyType;
+    const qty = users[userId].buyQty;
+       
     users[userId].buyRequest = false;
     users[userId].buyStep = null;
-    users[userId].buyType = null;
     users[userId].buyTime = null;
     users[userId].screenshot = null;
     users[userId].orderStatus = null;
@@ -481,7 +483,7 @@ if (
     }
     bot.sendMessage(adminId,
 `✅ Payment Approved
-🎯 Type: ${user.buyType}
+🎯 Type: ${type}
 Send Purchase CODE to ID: <code>${userId}</code>`,
 {parse_mode:"HTML"});
 
