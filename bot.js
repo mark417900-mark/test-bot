@@ -514,14 +514,12 @@ Send Purchase CODE to ID: <code>${userId}</code>`,
     }
 
     // self purchase logic
-    users[userId].selfPurchases += users[userId].buyQty;
-
-const selfEligible = Math.floor(users[userId].selfPurchases / 5);
+    const selfEligible = Math.floor(users[userId].selfPurchases / 5);
 
 if(selfEligible > users[userId].selfRedeems){
-    let newLimit = (selfEligible - users[userId].selfRedeems) * 2; // ✅ x2
+    let newLimit = (selfEligible - users[userId].selfRedeems) * 2;
 
-    users[userId].redeemLimit += newLimit;   // increase limit
+    users[userId].redeemLimit += newLimit;
     users[userId].selfRedeems = selfEligible;
         bot.sendMessage(userId,
 `🎁 <b>CODE PURCHASED BONUS!</b>
