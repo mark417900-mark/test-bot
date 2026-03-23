@@ -485,7 +485,6 @@ if (
 Send Purchase CODE to ID: <code>${userId}</code>`,
 {parse_mode:"HTML"});
 
-    // ✅ MOVE THIS INSIDE
     bot.sendMessage(userId, `✅ Payment Verified!\n\nYour purchase has been approved. 🥳`);
 
     // downline purchase msg
@@ -575,6 +574,7 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
     if(!ADMIN_IDS.includes(adminId) || !users[userId]) return;
 
     if(data.startsWith("approve_")){
+const user = users[userId];
 let progress = Math.min(getCombinedProgress(user), 10);
 // remove 10 progress smartly
 let remainingToRemove = 10;
@@ -756,7 +756,7 @@ inline_keyboard:[
 
     /* ================= USER COMMANDS ================= */
     if(text==="👤 Profile"){
-
+const progress = Math.min(getCombinedProgress(user), 10);
 bot.sendMessage(chatId,
 `👤 <b>Your Profile</b>
 🆔 ID: <code>${chatId}</code>
@@ -1067,6 +1067,7 @@ return;
                 return;
             }
             const user = users[id];
+            const progress = Math.min(getCombinedProgress(user), 10);
             // Fetch Telegram user info
     let username = "Not set";
     try {
