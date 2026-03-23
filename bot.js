@@ -514,6 +514,7 @@ Send Purchase CODE to ID: <code>${userId}</code>`,
     }
 
     // self purchase logic
+       users[userId].selfPurchases += users[userId].buyQty;
     const selfEligible = Math.floor(users[userId].selfPurchases / 5);
 
 if(selfEligible > users[userId].selfRedeems){
