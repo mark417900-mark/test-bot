@@ -479,8 +479,6 @@ if (
 
         users[referrer].downlineList[userId] += users[userId].buyQty;
     }
-
-    const user = users[userId];
     bot.sendMessage(adminId,
 `✅ Payment Approved
 🎯 Type: ${user.buyType}
@@ -577,8 +575,6 @@ if(data.startsWith("approve_") || data.startsWith("reject_")){
     if(!ADMIN_IDS.includes(adminId) || !users[userId]) return;
 
     if(data.startsWith("approve_")){
-    let user = users[userId];
-
 let progress = Math.min(getCombinedProgress(user), 10);
 // remove 10 progress smartly
 let remainingToRemove = 10;
