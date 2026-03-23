@@ -230,7 +230,30 @@ bot.on("callback_query", async (query) => {
         });
         return;
     }
+    // Downline Data 
+    if(data === "view_downline"){
+    const user = users[chatId];
 
+    let downlineText = "❌ No downline purchases yet.";
+
+    // 📊 DOWNLINE LIST
+    if(user.downlineList && Object.keys(user.downlineList).length > 0){
+        downlineText = Object.entries(user.downlineList)
+        .map(([id, qty]) => {
+            return `🆔 <code>${id}</code> → ${qty} CODE`;
+        })
+        .join("\n");
+    }
+
+    bot.sendMessage(chatId, `📊 <b>Your Downline Data</b>
+
+${downlineText}
+
+💡 Each downline purchase gives you +1 progress.`,
+    { parse_mode: "HTML" });
+
+    return;
+}
     /* ================= STOCK ================= */
     if (data === "stock_hotya") {
         bot.sendMessage(adminId, "🔥 Hotya Stock Control", {
@@ -493,16 +516,13 @@ Send Purchase CODE to ID: <code>${userId}</code>`,
     // self purchase logic
     users[userId].selfPurchases += users[userId].buyQty;
 
-    const selfEligible = Math.floor(users[userId].selfPurchases / 5);
+const selfEligible = Math.floor(users[userId].selfPurchases / 5);
 
-    if(selfEligible > users[userId].selfRedeems){
-        let newRedeems = selfEligible - users[userId].selfRedeems;
-        users[userId].totalRedeems += newRedeems;
-        users[userId].availableRedeems += newRedeems;
-        users[userId].selfRedeems = selfEligible;
-        users[userId].buyType = null;
-        users[userId].buyQty = 0;
-        users[userId].buyPrice = 0;
+if(selfEligible > users[userId].selfRedeems){
+    let newLimit = (selfEligible - users[userId].selfRedeems) * 2; // ✅ x2
+
+    users[userId].redeemLimit += newLimit;   // increase limit
+    users[userId].selfRedeems = selfEligible;
         bot.sendMessage(userId,
 `🎁 <b>CODE PURCHASED BONUS!</b>
 🎉 You earned <b>${newRedeems}</b> FREE redeem(s)!
@@ -787,18 +807,6 @@ ${link}
     }
 
 if(text==="🎁 Redeem"){
-
-    // 📊 DOWNLINE LIST
-    let downlineText = "No downline purchases yet.";
-
-    if(user.downlineList && Object.keys(user.downlineList).length > 0){
-        downlineText = Object.entries(user.downlineList)
-    .map(([id, qty]) => {
-        return `ID <code>${id}</code> → ${qty} CODE`;
-    })
-    .join("\n");
-    }
-    // 🔥 DOWNLINE SYSTEM
     const progress = Math.min(getCombinedProgress(user), 10);
     const usedRedeems = user.redeemHistory.length;
    if(progress < 10){
@@ -810,22 +818,26 @@ if(text==="🎁 Redeem"){
 ${getProgressBar(progress,10)}
 ━━━━━━━━━━━━━━━━━━━
 🎁 <b>EARNING SYSTEM</b>
-➊ Every downline purchase = +1 Progress 🚀
-➋ Buy 5 codes yourself = +10 Progress ⚡
+➊ Every downline purchase = +1 Progress
+➋ Buy 5 Codes yourself = +10 Progress
 
 💡 <b>HOW TO UNLOCK FASTER</b>
 Invite active users who will purchase Or buy yourself to unlock instantly 
-
-<b>DOWNLINE PURCHASE DETAILS</b>
-${downlineText}
 ━━━━━━━━━━━━━━━━━━━
 🚀<b>Tip:</b>Top users don’t wait they <b>take action</b> and unlock rewards faster😎`,
-{ parse_mode:"HTML" });
+{
+  parse_mode: "HTML",
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: "📊 Downline Data", callback_data: "view_downline" }]
+    ]
+  }
+});
 
         return;
     }
     // ❌ CHECK AVAILABLE REDEEM FIRST
-if(user.availableRedeems <= 0){
+if(user.totalRedeems >= user.redeemLimit){
     bot.sendMessage(chatId,
 `❌ <b>Redeem Limit Reached</b>
 You need to purchase at least <b>5 codes</b> to increase your limits`,
