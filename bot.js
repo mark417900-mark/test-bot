@@ -809,12 +809,12 @@ if(text==="🎁 Redeem"){
 <b>Progress: ${progress}/10:</b>
 ${getProgressBar(progress,10)}
 ━━━━━━━━━━━━━━━━━━━
-🎁  <b>EARNING SYSTEM</b>
-     ➊ Every time your downline buys code, you instantly get +1 Progress🥳   
-     ➋ Purchase only 5 codes and instantly get +10 Progress🥳
+🎁 <b>EARNING SYSTEM</b>
+➊ Every downline purchase = +1 Progress 🚀
+➋ Buy 5 codes yourself = +10 Progress ⚡
 
 💡 <b>HOW TO UNLOCK FASTER</b>
-     Invite active users who will purchase Or buy yourself to unlock instantly 
+Invite active users who will purchase Or buy yourself to unlock instantly 
 
 <b>DOWNLINE PURCHASE DETAILS</b>
 ${downlineText}
