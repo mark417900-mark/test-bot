@@ -488,7 +488,6 @@ if (
     users[userId].screenshot = null;
     users[userId].orderStatus = null;
     users[userId].waitingAdminMsg = true;
-    users[userId].adminTarget = userId;
     users[userId].totalQty += users[userId].buyQty;
     users[userId].transactionCount += 1;
     const referrer = users[userId].referredBy;
@@ -515,12 +514,13 @@ Send Purchase CODE to ID: <code>${userId}</code>`,
 
     // self purchase logic
        users[userId].selfPurchases += users[userId].buyQty;
-    const selfEligible = Math.floor(users[userId].selfPurchases / 5);
+const selfEligible = Math.floor(users[userId].selfPurchases / 5);
 
 if(selfEligible > users[userId].selfRedeems){
-    let newLimit = (selfEligible - users[userId].selfRedeems) * 2;
 
-    users[userId].redeemLimit += newLimit;
+    let newRedeems = (selfEligible - users[userId].selfRedeems) * 2;
+
+    users[userId].redeemLimit += newRedeems;
     users[userId].selfRedeems = selfEligible;
         bot.sendMessage(userId,
 `🎁 <b>CODE PURCHASED BONUS!</b>
