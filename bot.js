@@ -481,7 +481,6 @@ if (
 
     const type = users[userId].buyType;
     const qty = users[userId].buyQty;
-       
     users[userId].buyRequest = false;
     users[userId].buyStep = null;
     users[userId].buyTime = null;
@@ -678,41 +677,44 @@ bot.on("message", async(msg)=>{
     return;
 }
     /* ================= ADMIN SEND REWARD ================= */
-   const pendingUser = Object.keys(users).find(
-  id => users[id].waitingAdminMsg === true && users[id].adminTarget == id
-);
+   /* ================= ADMIN SEND REWARD ================= */
+if(adminState.targetUser){
 
-    if(pendingUser){
+    const target = adminState.targetUser;
 
-        /* PHOTO */
-        if(msg.photo){
-            const fileId = msg.photo[msg.photo.length-1].file_id;
-            bot.sendPhoto(pendingUser,fileId,{caption:text});
-        }
+    // 📸 If admin sends photo
+    if(msg.photo){
+        const fileId = msg.photo[msg.photo.length - 1].file_id;
+        bot.sendPhoto(target, fileId, { caption: text });
+    } 
+    
+    // 📝 If admin sends text
+    else{
+        bot.sendMessage(target, text);
+    }
 
-        /* TEXT */
-        else{
-            bot.sendMessage(pendingUser,text);
-        }
+    // ✅ Reset state after sending
+    users[target].waitingAdminMsg = false;
+    adminState.targetUser = null;
 
-     users[pendingUser].waitingAdminMsg = false;
-users[pendingUser].adminTarget = null;
-        saveUsers();
+    saveUsers();
 
-        bot.sendMessage(chatId,
-`✅ CODE sent successfully to ID: <code>${pendingUser}</code>`,
-{parse_mode:"HTML",
-            reply_markup:{
-                keyboard:[
- ["📊 Status","📢 Broadcast"],
- ["👤 User Info","✉ Msg User"],
- ["📦 Stock Manager"]
-],
-                resize_keyboard:true
-            }
-        });
+    // ✅ Confirmation to admin
+    bot.sendMessage(chatId,
+`✅ CODE sent successfully to ID: <code>${target}</code>`,
+{
+    parse_mode: "HTML",
+    reply_markup: {
+        keyboard: [
+            ["📊 Status","📢 Broadcast"],
+            ["👤 User Info","✉ Msg User"],
+            ["📦 Stock Manager"]
+        ],
+        resize_keyboard: true
+    }
+});
 
-        return;
+    return;
 }
 /* STOCK MANAGER */
 if(text === "📦 Stock Manager"){
