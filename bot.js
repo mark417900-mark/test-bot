@@ -604,10 +604,10 @@ if(remainingToRemove > 0){
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
 Your reward is being sent soon...`);
-        const u = users[userId];
+        const user = users[userId];
         bot.sendMessage(adminId,
 `✅ Redeem Approved
-🎯 Code Type: ${u.redeemType}
+🎯 Code Type: ${user.redeemType}
 
 Send redeem reward to ID:<code>${userId}</code>`,
 {parse_mode:"HTML"});
@@ -766,13 +766,13 @@ bot.sendMessage(chatId,
 🆔 ID: <code>${chatId}</code>
 
 👥 Total Referrals: ${user.ref}
-🎁 My Redeems: ${u.totalRedeems}/${u.redeemLimit || 0}
+🎁 My Redeems: ${user.totalRedeems}/${user.redeemLimit || 0}
 📈<b>Progress: ${progress}/10:</b>
-🛒 Total Transactions: ${u.transactionCount || 0}
-📦 Quantity Purchased: ${u.totalQty || 0}
+🛒 Total Transactions: ${user.transactionCount || 0}
+📦 Quantity Purchased: ${user.totalQty || 0}
 🎟 Available Redeems: ${user.availableRedeems}
-👥 <b>Downline Purchases:</b> ${u.downlinePurchases || 0}
-⚠️ <b>Warnings:</b> ${u.warnings || 0}
+👥 <b>Downline Purchases:</b> ${user.downlinePurchases || 0}
+⚠️ <b>Warnings:</b> ${user.warnings || 0}
 `,
 {parse_mode:"HTML"});
 
@@ -1070,7 +1070,7 @@ return;
                 bot.sendMessage(chatId,"❌ User not found.");
                 return;
             }
-            const u = users[id];
+            const user = users[id];
             // Fetch Telegram user info
     let username = "Not set";
     try {
@@ -1086,11 +1086,11 @@ return;
 👤 Username: ${username}
 
 👥 Total Referrals: ${user.ref}
-🎁 Redeems: ${u.totalRedeems}/${u.redeemLimit || 0}
+🎁 Redeems: ${user.totalRedeems}/${u.redeemLimit || 0}
 🎟 Available Redeems: ${user.availableRedeems}
 📈<b>Progress: ${progress}/10:</b>
-🛒 Total Transactions: ${u.transactionCount || 0}
-📦 Quantity Purchased: ${u.totalQty || 0}
+🛒 Total Transactions: ${user.transactionCount || 0}
+📦 Quantity Purchased: ${user.totalQty || 0}
 👥 <b>Downline Purchases:</b> ${u.downlinePurchases || 0}
 ⚠️ <b>Warnings:</b> ${u.warnings || 0}
 👤 Referred By: <code>${u.referredBy || "None"}</code>
