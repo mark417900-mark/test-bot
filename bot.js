@@ -765,7 +765,7 @@ bot.sendMessage(chatId,
 `👤 <b>Your Profile</b>
 🆔 ID: <code>${chatId}</code>
 
-👥 Total Referrals: ${u.ref}
+👥 Total Referrals: ${user.ref}
 🎁 My Redeems: ${u.totalRedeems}/${u.redeemLimit || 0}
 📈<b>Progress: ${progress}/10:</b>
 🛒 Total Transactions: ${u.transactionCount || 0}
@@ -814,7 +814,7 @@ ${getProgressBar(progress,10)}
 ━━━━━━━━━━━━━━━━━━━
 🎁 <b>EARNING SYSTEM</b>
 ➊ Every time your downline buys code, you instantly get +1 Progress   
-➋ if You buy only 5 codes then you instantly get +10 Progress
+➋ If You purchase only 5 codes then you instantly get +10 Progress
 
 💡 <b>HOW TO UNLOCK FASTER:</b>
 Invite active users who will purchase Or buy yourself to unlock instantly 
@@ -822,7 +822,7 @@ Invite active users who will purchase Or buy yourself to unlock instantly
 <b>DOWNLINE PURCHASE DETAILS</b>
 ${downlineText}
 ━━━━━━━━━━━━━━━━━━━
-🚀 <b>Pro Tip:</b>Top users don’t wait they <b>take action</b> and unlock rewards faster 💰`,
+🚀<b>Tip:</b>Top users don’t wait they <b>take action</b> and unlock rewards faster 💰`,
 { parse_mode:"HTML" });
 
         return;
@@ -1085,7 +1085,7 @@ return;
 🆔 User ID: <code>${id}</code>
 👤 Username: ${username}
 
-👥 Total Referrals: ${u.ref}
+👥 Total Referrals: ${user.ref}
 🎁 Redeems: ${u.totalRedeems}/${u.redeemLimit || 0}
 🎟 Available Redeems: ${user.availableRedeems}
 📈<b>Progress: ${progress}/10:</b>
