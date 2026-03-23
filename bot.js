@@ -488,7 +488,8 @@ if (
     users[userId].screenshot = null;
     users[userId].orderStatus = null;
     users[userId].waitingAdminMsg = true;
-    users[userId].totalQty += users[userId].buyQty;
+    adminState.targetUser = userId; // ✅ ADD THIS
+     users[userId].totalQty += users[userId].buyQty;
     users[userId].transactionCount += 1;
     const referrer = users[userId].referredBy;
     if(referrer && users[referrer]){ users[referrer].downlinePurchases += users[userId].buyQty;
@@ -617,7 +618,8 @@ if(remainingToRemove > 0){
     users[userId].totalRedeems += 1;
     users[userId].lastRedeemPurchaseCount = users[userId].transactionCount;
     users[userId].waitingAdminMsg = true;
-    users[userId].adminTarget = userId;
+    adminState.targetUser = userId; // ✅ FIX
+
     saveUsers();
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
