@@ -600,7 +600,6 @@ if(remainingToRemove > 0){
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
 Your reward is being sent soon...`);
-        const user = users[userId];
         bot.sendMessage(adminId,
 `✅ Redeem Approved
 🎯 Code Type: ${user.redeemType}
@@ -1083,14 +1082,14 @@ return;
 👤 Username: ${username}
 
 👥 Total Referrals: ${user.ref}
-🎁 Redeems: ${user.totalRedeems}/${u.redeemLimit || 0}
+🎁 Redeems: ${user.totalRedeems}/${user.redeemLimit || 0}
 🎟 Available Redeems: ${user.availableRedeems}
 📈<b>Progress: ${progress}/10:</b>
 🛒 Total Transactions: ${user.transactionCount || 0}
 📦 Quantity Purchased: ${user.totalQty || 0}
-👥 <b>Downline Purchases:</b> ${u.downlinePurchases || 0}
-⚠️ <b>Warnings:</b> ${u.warnings || 0}
-👤 Referred By: <code>${u.referredBy || "None"}</code>
+👥 <b>Downline Purchases:</b> ${user.downlinePurchases || 0}
+⚠️ <b>Warnings:</b> ${user.warnings || 0}
+👤 Referred By: <code>${user.referredBy || "None"}</code>
 <b>Progress: ${progress}/10:</b>`,
 { parse_mode: "HTML",
 reply_markup:{
