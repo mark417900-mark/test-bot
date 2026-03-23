@@ -196,7 +196,7 @@ bot.on("callback_query", async (query) => {
                 users[referrerId].invited.push(chatId);
 
                 bot.sendMessage(referrerId,
-`🎉 New Referral Joined using your referral Link ! `);
+`🎉 New User Joined using your referral Link ! `);
             }
 
             user.tempRef = null;
@@ -469,7 +469,9 @@ if (
 
     users[userId].totalQty += users[userId].buyQty;
     users[userId].transactionCount += 1;
-
+    users[userId].buyType = null;
+    users[userId].buyQty = 0;
+    users[userId].buyPrice = 0;
     const referrer = users[userId].referredBy;
 
     if(referrer && users[referrer]){
@@ -542,8 +544,7 @@ else if (data.startsWith("buydelivered_")) {
     saveUsers();
 
     bot.sendMessage(userId,
-`⚠️Order has already been delivered.
-
+`⚠️Order already delivered.
 🚫 Do not submit again.`,
     { parse_mode:"HTML" });
 }
@@ -561,9 +562,7 @@ else if (data.startsWith("buydelivered_")) {
 
         bot.sendMessage(userId,
 `⚠️ <b>Order Cancelled & Warning Issued</b>
-
-🚫 Reason:
-Fake / Invalid Payment Screenshot.`,
+🚫 Reason: Fake / Invalid Payment Screenshot.`,
         { parse_mode: "HTML" });
     }
 
@@ -601,7 +600,7 @@ if(remainingToRemove > 0){
     saveUsers();
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
-Your reward is being sent soon...`);
+Your reward is being sent soon..🥳`);
         bot.sendMessage(adminId,
 `✅ Redeem Approved
 🎯 Code Type: ${user.redeemType}
@@ -762,14 +761,11 @@ bot.sendMessage(chatId,
 `👤 <b>Your Profile</b>
 🆔 ID: <code>${chatId}</code>
 
-👥 Total Referrals: ${user.ref}
-🎁 My Redeems: ${user.totalRedeems}/${user.redeemLimit || 0}
-📈<b>Progress: ${progress}/10:</b>
-🛒 Total Transactions: ${user.transactionCount || 0}
+👥 My Downline: ${user.ref}
+🎁 Code Redeems: ${user.totalRedeems}/${user.redeemLimit || 0}
+📈 <b>Progress: ${progress}/10:</b>
 📦 Quantity Purchased: ${user.totalQty || 0}
 🎟 Available Redeems: ${user.availableRedeems}
-👥 <b>Downline Purchases:</b> ${user.downlinePurchases || 0}
-⚠️ <b>Warnings:</b> ${user.warnings || 0}
 `,
 {parse_mode:"HTML"});
 
