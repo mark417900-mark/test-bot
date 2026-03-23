@@ -504,7 +504,7 @@ Send Purchase CODE to ID: <code>${userId}</code>`,
         users[userId].buyQty = 0;
         users[userId].buyPrice = 0;
         bot.sendMessage(userId,
-`🎁 <b>SELF PURCHASED REWARD!</b>
+`🎁 <b>CODE PURCHASED BONUS!</b>
 🎉 You earned <b>${newRedeems}</b> FREE redeem(s)!
 💡 <i>5 Codes purchases = 1 redeem</i>`,
         { parse_mode:"HTML" });
@@ -543,7 +543,7 @@ else if (data.startsWith("buydelivered_")) {
     saveUsers();
 
     bot.sendMessage(userId,
-`⚠️Order already delivered.
+`Order already delivered.
 🚫 Do not submit again.`,
     { parse_mode:"HTML" });
 }
@@ -563,7 +563,7 @@ else if (data.startsWith("buydelivered_")) {
         saveUsers();
 
         bot.sendMessage(userId,
-`⚠️ <b>Order Cancelled & Warning Issued</b>
+` <b>Order Cancelled & Warning Issued</b>
 🚫 Reason: Fake / Invalid Payment Screenshot.`,
         { parse_mode: "HTML" });
     }
@@ -763,11 +763,13 @@ bot.sendMessage(chatId,
 `👤 <b>Your Profile</b>
 🆔 ID: <code>${chatId}</code>
 
-👥 My Downline: ${user.ref}
-🎁 Code Redeems: ${user.totalRedeems}/${user.redeemLimit || 0}
-📈 <b>Progress: ${progress}/10:</b>
+👥 My Referral: ${user.ref}
+🎁 Code Redeemed: ${user.totalRedeems}
 📦 Quantity Purchased: ${user.totalQty || 0}
-🎟 Available Redeems: ${user.availableRedeems}
+
+<b>Progress: ${progress}/10:</b>
+${getProgressBar(progress,10)}
+
 `,
 {parse_mode:"HTML"});
 
@@ -807,17 +809,17 @@ if(text==="🎁 Redeem"){
 <b>Progress: ${progress}/10:</b>
 ${getProgressBar(progress,10)}
 ━━━━━━━━━━━━━━━━━━━
-🎁 <b>EARNING SYSTEM</b>
-➊ Every time your downline buys code, you instantly get +1 Progress   
-➋ If You purchase only 5 codes then you instantly get +10 Progress
+🎁  <b>EARNING SYSTEM</b>
+     ➊ Every time your downline buys code, you instantly get +1 Progress🥳   
+     ➋ Purchase only 5 codes and instantly get +10 Progress🥳
 
-💡 <b>HOW TO UNLOCK FASTER:</b>
-Invite active users who will purchase Or buy yourself to unlock instantly 
+💡 <b>HOW TO UNLOCK FASTER</b>
+     Invite active users who will purchase Or buy yourself to unlock instantly 
 
 <b>DOWNLINE PURCHASE DETAILS</b>
 ${downlineText}
 ━━━━━━━━━━━━━━━━━━━
-🚀<b>Tip:</b>Top users don’t wait they <b>take action</b> and unlock rewards faster 💰`,
+🚀<b>Tip:</b>Top users don’t wait they <b>take action</b> and unlock rewards faster😎`,
 { parse_mode:"HTML" });
 
         return;
@@ -826,7 +828,7 @@ ${downlineText}
 if(user.availableRedeems <= 0){
     bot.sendMessage(chatId,
 `❌ <b>Redeem Limit Reached</b>
-You need to purchase at least <b>5 codes</b> to increase your limit`,
+You need to purchase at least <b>5 codes</b> to increase your limits`,
     { parse_mode:"HTML" });
     return;
 }
@@ -843,7 +845,6 @@ saveUsers();
 
 bot.sendMessage(chatId,
 `🎁 <b>Redeem Unlocked!</b>
-📊 Progress: ${progress}/10
 Select your reward 👇`,
 {
     parse_mode:"HTML",
