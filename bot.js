@@ -480,11 +480,10 @@ if (
         users[referrer].downlineList[userId] += users[userId].buyQty;
     }
 
-    const u = users[userId];
-
+    const user = users[userId];
     bot.sendMessage(adminId,
 `✅ Payment Approved
-🎯 Type: ${u.buyType}
+🎯 Type: ${user.buyType}
 Send Purchase CODE to ID: <code>${userId}</code>`,
 {parse_mode:"HTML"});
 
@@ -538,7 +537,6 @@ else if (data.startsWith("buydelivered_")) {
 
     users[userId].buyRequest = false;
     users[userId].buyStep = null;
-    users[userId].buyType = null;
     users[userId].screenshot = null;
     users[userId].orderStatus = null;
 
@@ -557,7 +555,6 @@ else if (data.startsWith("buydelivered_")) {
         users[userId].buyRequest = false;
         users[userId].warnings += 1;
         users[userId].buyStep = null;
-        users[userId].buyType = null;
         users[userId].screenshot = null;
         users[userId].orderStatus = null;
 
@@ -606,12 +603,13 @@ if(remainingToRemove > 0){
     saveUsers();
 
         bot.sendMessage(userId,`🎉 Redeem Approved!
-Your reward is being sent by the admin soon...`);
+Your reward is being sent soon...`);
         const u = users[userId];
         bot.sendMessage(adminId,
 `✅ Redeem Approved
-🎯 Type: ${u.redeemType}
-Send redeem reward to ID: <code>${userId}</code>`,
+🎯 Code Type: ${u.redeemType}
+
+Send redeem reward to ID:<code>${userId}</code>`,
 {parse_mode:"HTML"});
     } else {
     users[userId].redeemRequest = false;
@@ -642,7 +640,6 @@ bot.on("message", async(msg)=>{
     /* ================= PURCHASE CANCEL ================= */
     if(text === "❌ Cancel" && (user.buyRequest || user.buyStep)){
     user.buyRequest = false;
-    user.buyType = null;
     user.buyStep = null;
     user.screenshot = null;
     user.orderStatus = null;
@@ -768,11 +765,14 @@ bot.sendMessage(chatId,
 `👤 <b>Your Profile</b>
 🆔 ID: <code>${chatId}</code>
 
-🎁My Previous Redeems: ${user.totalRedeems}
-🛒 My Purchases: ${user.totalQty}
-👥 Downline Users: ${user.ref}
-
-⚠️ Warnings: ${user.warnings}
+👥 Total Referrals: ${u.ref}
+🎁 My Redeems: ${u.totalRedeems}/${u.redeemLimit || 0}
+📈<b>Progress: ${progress}/10:</b>
+🛒 Total Transactions: ${u.transactionCount || 0}
+📦 Quantity Purchased: ${u.totalQty || 0}
+🎟 Available Redeems: ${user.availableRedeems}
+👥 <b>Downline Purchases:</b> ${u.downlinePurchases || 0}
+⚠️ <b>Warnings:</b> ${u.warnings || 0}
 `,
 {parse_mode:"HTML"});
 
@@ -809,21 +809,20 @@ if(text==="🎁 Redeem"){
         bot.sendMessage(chatId,
 `<b>REDEEM LOCKED</b> 🔒
 
-🎁 <b>My Previous Redeems:</b> ${user.totalRedeems}
-Progress: ${progress}/10
+<b>Progress: ${progress}/10:</b>
 ${getProgressBar(progress,10)}
 ━━━━━━━━━━━━━━━━━━━
 🎁 <b>EARNING SYSTEM</b>
-➊ Your referrals buy 10 codes then you get +10 Progress  
+➊ Every time your downline buys code, you instantly get +1 Progress   
 ➋ if You buy only 5 codes then you instantly get +10 Progress
 
 💡 <b>HOW TO UNLOCK FASTER:</b>
 Invite active users who will purchase Or buy yourself to unlock instantly 
 
-📊 <b>DOWNLINE PURCHASE DETAILS</b>
+<b>DOWNLINE PURCHASE DETAILS</b>
 ${downlineText}
 ━━━━━━━━━━━━━━━━━━━
-🚀 <b>Pro Tip:</b>Top users don’t wait… they <b>take action</b> and unlock rewards faster 💰`,
+🚀 <b>Pro Tip:</b>Top users don’t wait they <b>take action</b> and unlock rewards faster 💰`,
 { parse_mode:"HTML" });
 
         return;
@@ -832,7 +831,7 @@ ${downlineText}
 if(user.availableRedeems <= 0){
     bot.sendMessage(chatId,
 `❌ <b>Redeem Limit Reached</b>
-⚠️ You need to purchase at least<b>5 codes</b> to increase your limit`,
+You need to purchase at least <b>5 codes</b> to increase your limit`,
     { parse_mode:"HTML" });
     return;
 }
@@ -850,8 +849,6 @@ saveUsers();
 bot.sendMessage(chatId,
 `🎁 <b>Redeem Unlocked!</b>
 📊 Progress: ${progress}/10
-${getProgressBar(progress,10)}
-
 Select your reward 👇`,
 {
     parse_mode:"HTML",
@@ -1091,12 +1088,13 @@ return;
 👥 Total Referrals: ${u.ref}
 🎁 Redeems: ${u.totalRedeems}/${u.redeemLimit || 0}
 🎟 Available Redeems: ${user.availableRedeems}
+📈<b>Progress: ${progress}/10:</b>
 🛒 Total Transactions: ${u.transactionCount || 0}
 📦 Quantity Purchased: ${u.totalQty || 0}
 👥 <b>Downline Purchases:</b> ${u.downlinePurchases || 0}
-
 ⚠️ <b>Warnings:</b> ${u.warnings || 0}
-👤 Referred By: <code>${u.referredBy || "None"}</code>`,
+👤 Referred By: <code>${u.referredBy || "None"}</code>
+<b>Progress: ${progress}/10:</b>`,
 { parse_mode: "HTML",
 reply_markup:{
 keyboard:[
