@@ -454,70 +454,69 @@ if (
     if (!users[userId]) return;
 
     // ✅ APPROVE
-    if (data.startsWith("buyapprove_")) {
+   if (data.startsWith("buyapprove_")) {
 
-        users[userId].buyRequest = false;
-        users[userId].buyStep = null;
-        users[userId].buyType = null;
-        users[userId].buyTime = null;
-        users[userId].screenshot = null;
-        users[userId].orderStatus = null;
-        users[userId].waitingAdminMsg = true;
-        users[userId].adminTarget = userId;
+    users[userId].buyRequest = false;
+    users[userId].buyStep = null;
+    users[userId].buyType = null;
+    users[userId].buyTime = null;
+    users[userId].screenshot = null;
+    users[userId].orderStatus = null;
+    users[userId].waitingAdminMsg = true;
+    users[userId].adminTarget = userId;
 
-        users[userId].totalQty += users[userId].buyQty;
-        users[userId].transactionCount += 1;
-        // 🔥 TRACK DOWNLINE DETAILS
-        const referrer = users[userId].referredBy;
+    users[userId].totalQty += users[userId].buyQty;
+    users[userId].transactionCount += 1;
 
-if(referrer && users[referrer]){
-    users[referrer].downlinePurchases += users[userId].buyQty;
+    const referrer = users[userId].referredBy;
 
-    if(!users[referrer].downlineList[userId]){
-        users[referrer].downlineList[userId] = 0;
+    if(referrer && users[referrer]){
+        users[referrer].downlinePurchases += users[userId].buyQty;
+
+        if(!users[referrer].downlineList[userId]){
+            users[referrer].downlineList[userId] = 0;
+        }
+
+        users[referrer].downlineList[userId] += users[userId].buyQty;
     }
 
-    users[referrer].downlineList[userId] += users[userId].buyQty;
-}
-        const u = users[userId];
-        bot.sendMessage(adminId,
+    const u = users[userId];
+
+    bot.sendMessage(adminId,
 `✅ Payment Approved
 🎯 Type: ${u.buyType}
 Send Purchase CODE to ID: <code>${userId}</code>`,
 {parse_mode:"HTML"});
-    } 
-        bot.sendMessage(userId, `✅ Payment Verified!\n\nYour purchase has been approved. 🥳`);
 
-        // downline purchase msg
-        if(referrer && users[referrer]){
-    bot.sendMessage(referrer,
+    // ✅ MOVE THIS INSIDE
+    bot.sendMessage(userId, `✅ Payment Verified!\n\nYour purchase has been approved. 🥳`);
+
+    // downline purchase msg
+    if(referrer && users[referrer]){
+        bot.sendMessage(referrer,
 `🎉 Your referral made a purchase!  ID: ${userId}`);
-}
-  
-        // 🔥 TRACK SELF PURCHASES
-users[userId].selfPurchases += users[userId].buyQty;
+    }
 
-// 🔥 CALCULATE SELF REDEEM
-const selfEligible = Math.floor(users[userId].selfPurchases / 5);
+    // self purchase logic
+    users[userId].selfPurchases += users[userId].buyQty;
 
-if(selfEligible > users[userId].selfRedeems){
-    let newRedeems = selfEligible - users[userId].selfRedeems;
-    users[userId].totalRedeems += newRedeems;
-    users[userId].availableRedeems += newRedeems;
-    users[userId].selfRedeems = selfEligible;
+    const selfEligible = Math.floor(users[userId].selfPurchases / 5);
 
-    bot.sendMessage(userId,
+    if(selfEligible > users[userId].selfRedeems){
+        let newRedeems = selfEligible - users[userId].selfRedeems;
+        users[userId].totalRedeems += newRedeems;
+        users[userId].availableRedeems += newRedeems;
+        users[userId].selfRedeems = selfEligible;
+
+        bot.sendMessage(userId,
 `🎁 <b>SELF PURCHASED REWARD!</b>
-
 🎉 You earned <b>${newRedeems}</b> FREE redeem(s)!
-
 💡 <i>5 Codes purchases = 1 redeem</i>`,
-    { parse_mode:"HTML" });
-}
+        { parse_mode:"HTML" });
+    }
 
     saveUsers();
 }
-
     // ❌ REJECT
     else if (data.startsWith("buyreject_")) {
 
@@ -1090,8 +1089,8 @@ return;
 👤 Username: ${username}
 
 👥 Total Referrals: ${u.ref}
-
 🎁 Redeems: ${u.totalRedeems}/${u.redeemLimit || 0}
+🎟 Available Redeems: ${user.availableRedeems}
 🛒 Total Transactions: ${u.transactionCount || 0}
 📦 Quantity Purchased: ${u.totalQty || 0}
 👥 <b>Downline Purchases:</b> ${u.downlinePurchases || 0}
